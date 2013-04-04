@@ -17,7 +17,12 @@ var getFnNames = function (channelName) {
 };
 
 module.exports = {
-    createMaster: function createMaster(ioP) {
+    createMaster: function createMaster(ioP, app) {
+        if (app) {
+            app.get('/socket.io/socket.io-rpc-client.js', function (req, res) {
+                res.sendfile('socket.io-rpc-client.js');
+            });
+        }
         io = ioP;
         var rpcMaster = io
             .of('/rpc-master')
