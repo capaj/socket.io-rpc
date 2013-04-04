@@ -17,12 +17,12 @@ rpc.expose('myChannel', {
 });
 </pre>
 
-###Clientside
+###In browser
 <pre>
-<script src="/socket.io/socket.io.js"></script>
-<script src="js/q.js"></script>
-<script src="/rpc-client.js"></script>
-<script>
+script src="/socket.io/socket.io.js"></script>
+script src="js/q.js"></script>
+script src="/rpc-client.js"></script>
+script>
     var socket = io.connect('http://localhost/');
 
     RPC.connect('http://localhost');
@@ -35,5 +35,6 @@ rpc.expose('myChannel', {
 			console.log('server returned: ' + retVal);
 		});
     });
-</script>
+/script>
 </pre>
+*Sorry for missing "<" but I could not figure out another way to write HTML tags inside readme.md.
