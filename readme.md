@@ -15,6 +15,16 @@ rpc.expose('myChannel', {
         return "String generated serverside with " + param;
     }
 });
+
+
+io.sockets.on('connection', function (socket) {
+    rpc.onClientChannelInit(socket.id,'clientChannel', function (socket, fns) {
+        fns.fnOnClient("calling client ").then(function (ret) {
+            console.log("client returned: " + ret);
+        });
+    });
+
+});
 </pre>
 
 ###In browser
