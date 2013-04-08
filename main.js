@@ -61,7 +61,7 @@ var RpcChannel = function (name, toExpose) {      //
 };
 
 module.exports = {
-    createMaster: function createMaster(ioP, app) {
+    createServer: function createMaster(ioP, app) {
         if (app) {
             app.get('/rpc-client.js', function (req, res) {
                 res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client.js');
@@ -122,12 +122,12 @@ module.exports = {
         var channel = new RpcChannel(name, toExpose);
         serverChannels[name] = channel;
     },
-    onClientChannelInit: function (id, name, callback) {
-//        if (options.name) {
-//
-//        }
-
-        var channel = getClientChannel(id, name);
+    loadClientChannel: function (socket, name, callback) {
+        var channel = getClientChannel(socket.id, name);
         channel.onConnection = callback;
+        socket.on('disconnect', function () {
+            delete clientChannels[socket.id];
+            console.log("deleted client channels from id " +socket.id);
+        })
     }
 };

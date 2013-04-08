@@ -1,12 +1,14 @@
 # socket.io-rpc
-Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io
+Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and q.
+
+Whole library is heavily depending on promises. When calling over network, promise is always returned.
 ## Usage example
 ###Serverside
 <pre>
 var io = require('socket.io').listen(server);
 
 var rpc = require('socket.io-rpc');
-rpc.createMaster(io, app);
+rpc.createServer(io, app);
 rpc.expose('myChannel', {
     getTime: function () {
         return new Date();
@@ -18,7 +20,7 @@ rpc.expose('myChannel', {
 
 
 io.sockets.on('connection', function (socket) {
-    rpc.onClientChannelInit(socket.id,'clientChannel', function (socket, fns) {
+    rpc.loadClientChannel(socket.id,'clientChannel', function (socket, fns) {
         fns.fnOnClient("calling client ").then(function (ret) {
             console.log("client returned: " + ret);
         });
