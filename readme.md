@@ -26,15 +26,26 @@ script>
     var socket = io.connect('http://localhost/');
 
     RPC.connect('http://localhost');
-    RPC.onChannelLoaded('myChannel', function (channel) {
-        channel.getTime().then(function (date) {
-            console.log('time on server is: ' + date);
+    RPC.loadChannel('myChannel').then(
+        function (channel) {
+            channel.getTime().then(function (date) {
+                console.log('time on server is: ' + date);
 
-        });
-        channel.myTest('passing string as argument').then(function(retVal){
-			console.log('server returned: ' + retVal);
-		});
-    });
+            });
+            channel.myTest('passing string as argument').then(function(retVal){
+                console.log('server returned: ' + retVal);
+            });
+        }
+    );
+    RPC.expose('clientChannel', {
+        fnOnClient: function (param) {
+            return 'whatever you need from client returned ' + param;
+        }
+    }).then(
+        function (channel) {
+            console.log(" client channel ready");
+        }
+    );
 /script>
 </pre>
 *Sorry for missing "<" but I could not figure out another way to write HTML tags inside readme.md.
