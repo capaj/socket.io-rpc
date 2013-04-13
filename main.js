@@ -63,8 +63,11 @@ var RpcChannel = function (name, toExpose) {      //
 module.exports = {
     createServer: function createMaster(ioP, app) {
         if (app) {
-            app.get('/rpc-client.js', function (req, res) {
+            app.get('/rpc/rpc-client.js', function (req, res) {
                 res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client.js');
+            });
+            app.get('/rpc/q.js', function (req, res) {
+                res.sendfile('node_modules/q/q.js');
             });
         }
         io = ioP;
