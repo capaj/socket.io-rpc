@@ -29,32 +29,58 @@ var getFnNames = function (channelName) {
     }
     return names;
 };
-
-var RpcChannel = function (name, toExpose) {      //
+/**
+ *
+ * @param {String} name
+ * @param {Object} toExpose
+ * @param [Function] authFn
+ * @returns {*}
+ * @constructor
+ */
+var RpcChannel = function (name, toExpose, authFn) {      //
     this.fns = toExpose;
-    this._socket = io
-        .of('/rpc-'+name)
-        .on('connection', function (socket) {
-            socket.on('invocation', function (data) {
-                if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
-                    var that = toExpose['this'] || toExpose;
-                    var retVal = toExpose[data.fnName].apply(that, data.argsArray);
-                    if (typeof retVal.then === 'function') {    // this is async function, so we will emit 'return' after it finishes
-                        //promise must be returned in order to be treated as async
-                        retVal.then(function (asyncRetVal) {
-                            socket.emit('return', { toId: data.Id, value: asyncRetVal });
-                        }, function (error) {
-                            socket.emit('error', { toId: data.Id, reason: error });
-                        });
-                    } else {
-                        socket.emit('return', { toId: data.Id, value: retVal });
-                    }
-
+    if (authFn) {
+        this.authFn = authFn;
+        this.authenticated = {};
+    }
+    this._socket = io.of('/rpc-'+name);
+    var that = this;
+    this._socket.on('connection', function (socket) {
+        var invocationRes = function (data) {
+            if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
+                var that = toExpose['this'] || toExpose;
+                var retVal = toExpose[data.fnName].apply(that, data.argsArray);
+                if (typeof retVal.then === 'function') {    // this is async function, so we will emit 'return' after it finishes
+                    //promise must be returned in order to be treated as async
+                    retVal.then(function (asyncRetVal) {
+                        socket.emit('return', { toId: data.Id, value: asyncRetVal });
+                    }, function (error) {
+                        socket.emit('error', { toId: data.Id, reason: error });
+                    });
                 } else {
-                    socket.emit('error', {toId: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
+                    socket.emit('return', { toId: data.Id, value: retVal });
                 }
-            });
-        });
+
+            } else {
+                socket.emit('error', {toId: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
+            }
+        };
+
+        if (that.authFn) {
+            if (typeof that.authenticated[socket.id] !== "undefined") {
+                socket.on('invocation', invocationRes);
+                socket.on('disconnect', function () {
+                    delete that.authenticated[socket.id];   // cleaning up
+                });
+            } else {
+                socket.emit('connect_failed', "Authentication for channel failed");
+                socket.disconnect();    // forcibly disconnect
+            }
+        } else {
+            socket.on('invocation', invocationRes);
+        }
+
+    });
 
 //        serverChannels[channel] = ioChannel;
     return this;
@@ -71,27 +97,40 @@ module.exports = {
             });
         }
         io = ioP;
-        var rpcMaster = io
+        return io
             .of('/rpc-master')
-            .on('connection', function (masterSocket) {
-                masterSocket.on('load channel', function (name) {
-                    if (serverChannels.hasOwnProperty(name)) {
-                        masterSocket.emit('channelFns', {name: name, fnNames: getFnNames(name)});
+            .on('connection', function (socket) {
+                socket.on('load channel', function (data) {
+                    if (serverChannels.hasOwnProperty(data.name)) {
+                        var callback = function (authorized) {
+                            if (authorized) {
+                                serverChannels[data.name].authenticated[socket.id] = null;  // we don't need any value here, existence of the ID in this object means that client is authorized
+                                socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+                            } else {
+                                socket.emit('AuthorizationFailed', data.name);
+                            }
+                        };
+                        var authFn = serverChannels[data.name].authFn;
+                        if (typeof authFn === 'function') { // check whether this is private channel
+                            serverChannels[data.name].authFn(data.handshake, callback);
+                        } else {
+                            socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+                        }
                     } else {
-                        masterSocket.emit('channelDoesNotExist', {name: name})
+                        socket.emit('channelDoesNotExist', {name: data.name})
                     }
                 });
-                masterSocket.on('load channelList', function () {
-                    masterSocket.emit('channels', { list: getChannelNames() });
+                socket.on('load channelList', function () {
+                    socket.emit('channels', { list: getChannelNames() });
                 });
-                masterSocket.on('expose channel', function (data) {   // client wants to expose a channel
-                    console.log("client with ID" + masterSocket.id +" exposed rpc channel " + data.name);
-                    var channel = getClientChannel(masterSocket.id, data.name);
+                socket.on('expose channel', function (data) {   // client wants to expose a channel
+                    console.log("client with ID" + socket.id +" exposed rpc channel " + data.name);
+                    var channel = getClientChannel(socket.id, data.name);
 
 //                    console.log(socket);
 //                    channel.deferred = channel.deferred || Q.defer();
                     channel.fns = channel.fns || {};
-                    channel.socket = io.of('/rpcC-'+data.name + '/' + masterSocket.id);  //rpcC stands for rpc Client
+                    channel.socket = io.of('/rpcC-'+data.name + '/' + socket.id);  //rpcC stands for rpc Client
                     data.fns.forEach(function (fnName) {
                         channel.fns[fnName] = function () {
                             counter++;
@@ -115,14 +154,20 @@ module.exports = {
 //                        channel.deferred.resolve(channel);
                     });
 
-                    masterSocket.emit('client channel created', data.name)
+                    socket.emit('client channel created', data.name)
 
                 });
-            });
-        return rpcMaster;
+            }
+        );
     },
-    expose: function (name, toExpose) {
-        var channel = new RpcChannel(name, toExpose);
+    /**
+     *  Makes a channel available for clients
+     * @param {String} name
+     * @param {Object} toExpose
+     * @param [auth] when provided, channel will require authentication
+     */
+    expose: function (name, toExpose, authFn) {
+        var channel = new RpcChannel(name, toExpose, authFn);
         serverChannels[name] = channel;
     },
     loadClientChannel: function (socket, name, callback) {
@@ -130,7 +175,6 @@ module.exports = {
         channel.onConnection = callback;
         socket.on('disconnect', function () {
             delete clientChannels[socket.id];
-            console.log("deleted client channels from id " +socket.id);
-        })
+        });
     }
 };

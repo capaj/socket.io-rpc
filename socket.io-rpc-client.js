@@ -6,19 +6,23 @@ var RPC = (function (rpc) {
     var deferreds = {};
     var baseURL;
     var rpcMaster;
-    var _loadChannel = function (name) {
-        rpcMaster.emit('load channel', name);
+    var _loadChannel = function (name, handshakeData) {
+        rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
         if (!serverChannels.hasOwnProperty(name)) {
             serverChannels[name] = {};
         }
         var channel = serverChannels[name];
         channel._loadDef = channel._loadDef || Q.defer();
-        channel._socket = io.connect(baseURL + '/rpc-' + name)
+        channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
             .on('return', function (data) {
                 deferreds[data.toId].resolve(data.value);
             })
             .on('error', function (data) {
                 deferreds[data.toId].reject(data.reason);
+            })
+            .on('connect_failed', function (reason) {
+                console.error('unable to connect to namespace ', reason);
+                channel._loadDef.reject(reason);
             });
         return channel._loadDef.promise;
     };
@@ -101,8 +105,8 @@ var RPC = (function (rpc) {
 
     };
 
-    rpc.loadChannel = function (name) {
-        return _loadChannel(name);
+    rpc.loadChannel = function (name, handshakeData) {
+        return _loadChannel(name, handshakeData);
     };
 
     rpc.expose = function (name, toExpose) { //

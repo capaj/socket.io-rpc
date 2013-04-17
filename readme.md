@@ -60,4 +60,29 @@ script>
     );
 /script>
 </pre>
+
+###With authentication server
+<pre>
+rpc.expose('myChannel', {
+    ...
+},
+    function (handshake, callback) {
+        console.dir(handshake);
+        if (handshake.pswd === 'super secret password') {   //or any other kind of logic you need
+            callback(true);
+        } else {
+            callback(false);
+        }
+    }
+);
+
+</pre>
+###With authentication browser
+<pre>
+    RPC.loadChannel('myChannel', { pswd: "super secret password" }).then(
+        function (channel) {
+           ...
+        }
+    );
+</pre>
 *Sorry for missing "<" but I could not figure out another way to write HTML tags inside readme.md.
