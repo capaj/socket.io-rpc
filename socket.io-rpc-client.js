@@ -12,7 +12,7 @@ var RPC = (function (rpc) {
             serverChannels[name] = {};
         }
         var channel = serverChannels[name];
-        channel._loadDef = channel._loadDef || Q.defer();
+        channel._loadDef = Q.defer();
         channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
             .on('return', function (data) {
                 deferreds[data.toId].resolve(data.value);
