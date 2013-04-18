@@ -60,15 +60,17 @@ var RPC = (function (rpc) {
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
                             var that = exposed['this'] || exposed;
                             var retVal = exposed[data.fnName].apply(that, data.argsArray);
-                            if (typeof retVal.then === 'function') {    // this is async function, so we will emit 'return' after it finishes
-                                //promise must be returned in order to be treated as async
-                                retVal.then(function (asyncRetVal) {
-                                    socket.emit('return', { toId: data.Id, value: asyncRetVal });
-                                }, function (error) {
-                                    socket.emit('error', { toId: data.Id, reason: error });
-                                });
-                            } else {
-                                socket.emit('return', { toId: data.Id, value: retVal });
+                            if (retVal) {
+                                if (typeof retVal.then === 'function') {    // this is async function, so we will emit 'return' after it finishes
+                                    //promise must be returned in order to be treated as async
+                                    retVal.then(function (asyncRetVal) {
+                                        socket.emit('return', { toId: data.Id, value: asyncRetVal });
+                                    }, function (error) {
+                                        socket.emit('error', { toId: data.Id, reason: error });
+                                    });
+                                } else {
+                                    socket.emit('return', { toId: data.Id, value: retVal });
+                                }
                             }
 
                         } else {

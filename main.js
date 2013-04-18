@@ -50,17 +50,18 @@ var RpcChannel = function (name, toExpose, authFn) {      //
             if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
                 var that = toExpose['this'] || toExpose;
                 var retVal = toExpose[data.fnName].apply(that, data.argsArray);
-                if (typeof retVal.then === 'function') {    // this is async function, so we will emit 'return' after it finishes
-                    //promise must be returned in order to be treated as async
-                    retVal.then(function (asyncRetVal) {
-                        socket.emit('return', { toId: data.Id, value: asyncRetVal });
-                    }, function (error) {
-                        socket.emit('error', { toId: data.Id, reason: error });
-                    });
-                } else {
-                    socket.emit('return', { toId: data.Id, value: retVal });
-                }
-
+                if (retVal) {
+                    if (typeof retVal.then === 'function') {    // this is async function, so we will emit 'return' after it finishes
+                        //promise must be returned in order to be treated as async
+                        retVal.then(function (asyncRetVal) {
+                            socket.emit('return', { toId: data.Id, value: asyncRetVal });
+                        }, function (error) {
+                            socket.emit('error', { toId: data.Id, reason: error });
+                        });
+                    } else {
+                        socket.emit('return', { toId: data.Id, value: retVal });
+                    }
+                }       // when no value is returned we don't do anything
             } else {
                 socket.emit('error', {toId: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
             }
