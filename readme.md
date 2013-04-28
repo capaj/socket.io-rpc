@@ -1,5 +1,5 @@
 # socket.io-rpc
-Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and q.
+Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and q. Has two client libraries-one for general use, other for AngularJS.
 
 Whole library is heavily depending on promises. When calling over network, promise is always returned.
 ## Usage example
@@ -58,6 +58,40 @@ script>
             console.log(" client channel ready");
         }
     );
+/script>
+</pre>
+
+###In browser for AngularJS
+<pre>
+script src="/socket.io/socket.io.js"></script>
+script src="/rpc/q.js"></script>    // for optimal performace download and use here minified version, use this for development or for non-performance critical scenarios
+script src="/rpc/rpc-client-angular.js"></script>
+script>
+    var socket = io.connect('http://localhost/');
+    function myController($scope, $rpc){
+        $rpc.connect('http://localhost');
+        $rpc.loadChannel('myChannel').then(
+            function (channel) {
+                channel.getTime().then(function (date) {
+                    console.log('time on server is: ' + date);
+                    //no need to call $scope.$apply, because it is called in $rpc;
+                });
+                channel.myTest('passing string as argument').then(function(retVal){
+                    console.log('server returned: ' + retVal);
+                });
+            }
+        );
+        $rpc.expose('clientChannel', {
+            fnOnClient: function (param) {
+                return 'whatever you need from client returned ' + param;
+            }
+        }).then(
+            function (channel) {
+                console.log(" client channel ready");
+            }
+        );
+    }
+
 /script>
 </pre>
 
