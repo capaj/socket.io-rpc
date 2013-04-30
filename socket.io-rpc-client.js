@@ -61,7 +61,7 @@ var RPC = (function (rpc) {
                             var that = exposed['this'] || exposed;
                             var retVal = exposed[data.fnName].apply(that, data.argsArray);
                             if (retVal) {
-                                if (typeof retVal.then === 'function') {    // this is async function, so we will emit 'return' after it finishes
+                                if (when.isPromise(retVal)) {    // this is async function, so we will emit 'return' after it finishes
                                     //promise must be returned in order to be treated as async
                                     retVal.then(function (asyncRetVal) {
                                         socket.emit('return', { toId: data.Id, value: asyncRetVal });

@@ -69,6 +69,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                             var that = exposed['this'] || exposed;
                             var retVal = exposed[data.fnName].apply(that, data.argsArray);
                             if (retVal) {
+                                //TODO investigate if the next block could be changed to $q.when() call
                                 if (typeof retVal.then === 'function') {    // this is async function, so we will emit 'return' after it finishes
                                     //promise must be returned in order to be treated as async
                                     retVal.then(function (asyncRetVal) {
