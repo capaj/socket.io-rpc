@@ -32,7 +32,7 @@ io.sockets.on('connection', function (socket) {
 ###In browser
 <pre>
 script src="/socket.io/socket.io.js"></script>
-script src="/rpc/q.js"></script>    // for optimal performace download and use here minified version, use this for development or for non-performance critical scenarios
+script src="/rpc/when.js"></script>    // for optimal performace download and use here minified version, use this for development or for non-performance critical scenarios
 script src="/rpc/rpc-client.js"></script>
 script>
     RPC.connect('http://localhost');

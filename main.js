@@ -1,4 +1,4 @@
-var Q = require('q');
+var when = require('when');
 var io;
 var deferreds = {};
 var counter = 0;
@@ -132,7 +132,7 @@ module.exports = {
                     var channel = getClientChannel(socket.id, data.name);
 
 //                    console.log(socket);
-//                    channel.deferred = channel.deferred || Q.defer();
+//                    channel.deferred = channel.deferred || when.defer();
                     channel.fns = channel.fns || {};
                     channel.socket = io.of('/rpcC-'+data.name + '/' + socket.id);  //rpcC stands for rpc Client
                     data.fns.forEach(function (fnName) {
@@ -141,7 +141,7 @@ module.exports = {
                             channel.socket.emit('invocation',
                                 {Id: counter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
                             );
-                            deferreds[counter] = Q.defer();
+                            deferreds[counter] = when.defer();
                             return deferreds[counter].promise;
                         }
                     });

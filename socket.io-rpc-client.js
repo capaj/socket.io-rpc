@@ -12,7 +12,7 @@ var RPC = (function (rpc) {
             serverChannels[name] = {};
         }
         var channel = serverChannels[name];
-        channel._loadDef = Q.defer();
+        channel._loadDef = when.defer();
         channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
             .on('return', function (data) {
                 deferreds[data.toId].resolve(data.value);
@@ -39,7 +39,7 @@ var RPC = (function (rpc) {
                             channelObj._socket.emit('invocation',
                                 {Id: counter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
                             );
-                            deferreds[counter] = Q.defer();
+                            deferreds[counter] = when.defer();
                             return deferreds[counter].promise;
                         }
                     });
@@ -88,7 +88,7 @@ var RPC = (function (rpc) {
 
     rpc.loadAllChannels = function () {
         if (rpcMaster) {
-            rpcMaster.__channelListLoad = Q.defer();
+            rpcMaster.__channelListLoad = when.defer();
             rpcMaster.emit('load channelList');
             rpcMaster
                 .on('channels', function (data) {
@@ -117,7 +117,7 @@ var RPC = (function (rpc) {
         }
         var channel = clientChannels[name];
         channel.fns = toExpose;
-        channel.deferred = Q.defer();
+        channel.deferred = when.defer();
         var fnNames = [];
         for(var fn in toExpose)
         {
