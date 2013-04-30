@@ -2,6 +2,8 @@
 Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and q. Has two client libraries-one for general use, other for AngularJS.
 
 Whole library is heavily depending on promises. When calling over network, promise is always returned.
+## ChangeLog
+    0.0.8 -> 0.0.9 Switched from Q to when.js, when updating don't forget to change Q to when.js on your client script references
 ## Usage example
 ###Serverside
 <pre>
