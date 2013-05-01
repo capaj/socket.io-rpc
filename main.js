@@ -96,8 +96,8 @@ module.exports = {
             app.get('/rpc/rpc-client-angular.js', function (req, res) {
                 res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client-angular.js');
             });
-            app.get('/rpc/q.js', function (req, res) {
-                res.sendfile('node_modules/q/q.js');
+            app.get('/rpc/when.js', function (req, res) {
+                res.sendfile('node_modules/when/when.js');
             });
         }
         io = ioP;
