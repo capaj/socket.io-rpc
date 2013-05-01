@@ -66,34 +66,35 @@ script>
 script src="/socket.io/socket.io.js"></script>
 script src="/rpc/rpc-client-angular.js"></script>
 script>
-    function myController($scope, $rpc){
-        $rpc.connect('http://localhost');   // don't forget port, if you are not on 80
-        $rpc.loadChannel('myChannel').then(
-            function (channel) {
-                channel.getTime().then(function (date) {
-                    console.log('time on server is: ' + date);
-                    //no need to call $scope.$apply, because it is called in $rpc;
-                });
-                // Angular templating engine can interpret promises on its own, so if you bind serverTime to template, it should show the value once it resolves
-                $scope.serverTime = channel.getTime();
-                
-                channel.myTest('passing string as argument').then(function(retVal){
-                    console.log('server returned: ' + retVal);
-                });
-                
-            }
-        );
-        $rpc.expose('clientChannel', {
-            fnOnClient: function (param) {
-                return 'whatever you need from client returned ' + param;
-            }
-        }).then(
-            function (channel) {
-                console.log(" client channel ready");
-            }
-        );
-    }
-
+    angular.module('app', ['RPC']).controller('myCtrl', 
+        function myCtrl($scope, $rpc){
+            $rpc.connect('http://localhost');   // don't forget port, if you are not on 80
+            $rpc.loadChannel('myChannel').then(
+                function (channel) {
+                    channel.getTime().then(function (date) {
+                        console.log('time on server is: ' + date);
+                        //no need to call $scope.$apply, because it is called in $rpc;
+                    });
+                    // Angular templating engine can interpret promises on its own, so if you bind serverTime to template, it should show the value once it resolves
+                    $scope.serverTime = channel.getTime();
+                    
+                    channel.myTest('passing string as argument').then(function(retVal){
+                        console.log('server returned: ' + retVal);
+                    });
+                    
+                }
+            );
+            $rpc.expose('clientChannel', {
+                fnOnClient: function (param) {
+                    return 'whatever you need from client returned ' + param;
+                }
+            }).then(
+                function (channel) {
+                   j console.log(" client channel ready");
+                }
+            );
+        }
+    )
 /script>
 </pre>
 
