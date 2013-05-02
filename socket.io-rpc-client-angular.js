@@ -27,6 +27,10 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                 channel._loadDef.reject(reason);
                 $rootScope.$apply();
 
+            })
+            .on('disconnect', function (data) {
+                delete serverChannels[name];
+                console.warn("Server channel " + name + " disconnected.");
             });
         return channel._loadDef.promise;
     };
@@ -118,7 +122,11 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 
         },
         loadChannel: function (name, handshakeData) {
-            return _loadChannel(name, handshakeData);
+            if (serverChannels.hasOwnProperty(name)) {
+                return serverChannels[name]._loadDef;
+            } else {
+                return _loadChannel(name, handshakeData);
+            }
         },
         expose: function (name, toExpose) { //
             if (!clientChannels.hasOwnProperty(name)) {

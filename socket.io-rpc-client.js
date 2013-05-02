@@ -23,6 +23,10 @@ var RPC = (function (rpc) {
             .on('connect_failed', function (reason) {
                 console.error('unable to connect to namespace ', reason);
                 channel._loadDef.reject(reason);
+            })
+            .on('disconnect', function (data) {
+                delete serverChannels[name];
+                console.warn("Server channel " + name + " disconnected.");
             });
         return channel._loadDef.promise;
     };
@@ -108,7 +112,11 @@ var RPC = (function (rpc) {
     };
 
     rpc.loadChannel = function (name, handshakeData) {
-        return _loadChannel(name, handshakeData);
+        if (serverChannels.hasOwnProperty(name)) {
+            return serverChannels[name]._loadDef;
+        } else {
+            return _loadChannel(name, handshakeData);
+        }
     };
 
     rpc.expose = function (name, toExpose) { //
