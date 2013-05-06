@@ -113,7 +113,7 @@ var RPC = (function (rpc) {
 
     rpc.loadChannel = function (name, handshakeData) {
         if (serverChannels.hasOwnProperty(name)) {
-            return serverChannels[name]._loadDef;
+            return serverChannels[name]._loadDef.promise;
         } else {
             return _loadChannel(name, handshakeData);
         }
