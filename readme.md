@@ -90,7 +90,7 @@ script>
                 }
             }).then(
                 function (channel) {
-                   j console.log(" client channel ready");
+                   console.log(" client channel ready");
                 }
             );
         }
