@@ -45,7 +45,7 @@ var RPC = (function (rpc) {
                             );
                             deferreds[counter] = when.defer();
                             return deferreds[counter].promise;
-                        }
+                        };
                     });
 
                     channelObj._loadDef.resolve(channelObj);
