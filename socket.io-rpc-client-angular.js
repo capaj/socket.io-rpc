@@ -49,7 +49,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                             );
                             deferreds[counter] = $q.defer();
                             return deferreds[counter].promise;
-                        }
+                        };
                     });
 
                     channelObj._loadDef.resolve(channelObj);

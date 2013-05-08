@@ -121,7 +121,7 @@ module.exports = {
                             socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
                         }
                     } else {
-                        socket.emit('channelDoesNotExist', {name: data.name})
+                        socket.emit('channelDoesNotExist', {name: data.name});
                     }
                 });
                 socket.on('load channelList', function () {
@@ -143,7 +143,7 @@ module.exports = {
                             );
                             deferreds[counter] = when.defer();
                             return deferreds[counter].promise;
-                        }
+                        };
                     });
                     channel.socket.on('connection', function (socket) {
                         socket.on('return', function (data) {
@@ -158,7 +158,7 @@ module.exports = {
 //                        channel.deferred.resolve(channel);
                     });
 
-                    socket.emit('client channel created', data.name)
+                    socket.emit('client channel created', data.name);
 
                 });
             }
