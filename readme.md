@@ -18,11 +18,17 @@ Whole library is heavily depending on promises. When calling over network, promi
     var rpc = require('socket.io-rpc');
     rpc.createServer(io, app);
     rpc.expose('myChannel', {
+        //plain JS function
         getTime: function () {
             return new Date();
         },
-        myTest: function (param) {
-            return "String generated serverside with " + param;
+        //returns a promise, which when resolved will resolve promise on client-side with the result
+        myAsyncTest: function (param) {
+            var deffered = when.defer();
+            setTimeout(function(){
+                deffered.resolve("String generated asynchronously serverside with " + param);
+            },1000);
+            return deffered.promise;
         }
     });
 
@@ -50,7 +56,7 @@ Whole library is heavily depending on promises. When calling over network, promi
                     console.log('time on server is: ' + date);
 
                 });
-                channel.myTest('passing string as argument').then(function(retVal){
+                channel.myAsyncTest('passing string as argument').then(function(retVal){
                     console.log('server returned: ' + retVal);
                 });
             }
@@ -84,7 +90,7 @@ Whole library is heavily depending on promises. When calling over network, promi
                         // Angular templating engine can interpret promises on its own, so if you bind serverTime to template, it should show the value once it resolves
                         $scope.serverTime = channel.getTime();
                         
-                        channel.myTest('passing string as argument').then(function(retVal){
+                        channel.myAsyncTest('passing string as argument').then(function(retVal){
                             console.log('server returned: ' + retVal);
                         });
                         
