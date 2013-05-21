@@ -18,7 +18,11 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                 $rootScope.$apply();
             })
             .on('error', function (data) {
-                deferreds[data.toId].reject(data.reason);
+                if (data && data.toId) {
+                    deferreds[data.toId].reject(data.reason);
+                } else {
+                    console.error("Unknown error occured on RPC socket connection");
+                }
                 $rootScope.$apply();
 
             })

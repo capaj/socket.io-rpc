@@ -18,7 +18,11 @@ var RPC = (function (rpc) {
                 deferreds[data.toId].resolve(data.value);
             })
             .on('error', function (data) {
-                deferreds[data.toId].reject(data.reason);
+                if (data && data.toId) {
+                    deferreds[data.toId].reject(data.reason);
+                } else {
+                    console.error("Unknown error occured on RPC socket connection");
+                }
             })
             .on('connect_failed', function (reason) {
                 console.error('unable to connect to namespace ', reason);
