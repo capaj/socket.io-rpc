@@ -6,7 +6,7 @@ Whole library is heavily depending on promises. When calling over network, promi
 
 
 ## ChangeLog
-    0.0.8 -> 0.0.9 Switched from Q to when.js, when updating don't forget to change Q to when.js on your client script references
+    0.0.8 -> 0.0.9 Switched from Q to when.js for better performance
 
 
 ## Usage example
@@ -14,7 +14,7 @@ Whole library is heavily depending on promises. When calling over network, promi
 
 ###Serverside
     var io = require('socket.io').listen(server);
-
+    var when = require('when'); // you can use any other http://promises-aplus.github.io/promises-spec/ compliant library
     var rpc = require('socket.io-rpc');
     rpc.createServer(io, app);
     rpc.expose('myChannel', {
