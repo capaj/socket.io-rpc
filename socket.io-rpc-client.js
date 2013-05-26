@@ -1,11 +1,31 @@
 // RPC client
 var RPC = (function (rpc) {
-    var counter = 0;
+    var invocationCounter = 0;
+    var endCounter = 0;
     var serverChannels = {};
     var clientChannels = {};
-    var deferreds = {};
+    var deferreds = [];
     var baseURL;
     var rpcMaster;
+    rpc.onBatchStarts = function () {};
+    rpc.onBatchEnd = function () {};
+    rpc.onCall = function () {};
+    rpc.onEnd = function () {};
+    var callEnded = function (Id) {
+        if (deferreds[Id]) {
+            delete deferreds[Id];
+            endCounter++;
+            rpc.onEnd(endCounter);
+            if (endCounter == invocationCounter) {
+                rpc.onBatchEnd(endCounter);
+                invocationCounter = 0;
+                endCounter = 0;
+            }
+        }else {
+            console.warn("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
+        }
+    };
+
     var _loadChannel = function (name, handshakeData) {
         rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
         if (!serverChannels.hasOwnProperty(name)) {
@@ -15,11 +35,13 @@ var RPC = (function (rpc) {
         channel._loadDef = when.defer();
         channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
             .on('return', function (data) {
-                deferreds[data.toId].resolve(data.value);
+                deferreds[data.Id].resolve(data.value);
+                callEnded(data.Id);
             })
             .on('error', function (data) {
-                if (data && data.toId) {
-                    deferreds[data.toId].reject(data.reason);
+                if (data && data.Id) {
+                    deferreds[data.Id].reject(data.reason);
+                    callEnded(data.Id);
                 } else {
                     console.error("Unknown error occured on RPC socket connection");
                 }
@@ -43,12 +65,16 @@ var RPC = (function (rpc) {
                     var channelObj = serverChannels[data.name];
                     data.fnNames.forEach(function (fnName) {
                         channelObj[fnName] = function () {
-                            counter++;
-                            channelObj._socket.emit('invocation',
-                                {Id: counter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
+                            invocationCounter++;
+                            channelObj._socket.emit('call',
+                                {Id: invocationCounter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
                             );
-                            deferreds[counter] = when.defer();
-                            return deferreds[counter].promise;
+                            if (invocationCounter == 1) {
+                                rpc.onBatchStarts(invocationCounter);
+                            }
+                            rpc.onCall(invocationCounter);
+                            deferreds[invocationCounter] = when.defer();
+                            return deferreds[invocationCounter].promise;
                         };
                     });
 
@@ -63,7 +89,7 @@ var RPC = (function (rpc) {
                     var channel = clientChannels[name];
                     var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.socket.sessionid);  //rpcC stands for rpc Client
                     channel.socket = socket;
-                    socket.on('invocation', function (data) {
+                    socket.on('call', function (data) {
                         var exposed = channel.fns;
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
                             var that = exposed['this'] || exposed;
@@ -72,17 +98,17 @@ var RPC = (function (rpc) {
                                 if (when.isPromise(retVal)) {    // this is async function, so we will emit 'return' after it finishes
                                     //promise must be returned in order to be treated as async
                                     retVal.then(function (asyncRetVal) {
-                                        socket.emit('return', { toId: data.Id, value: asyncRetVal });
+                                        socket.emit('return', { Id: data.Id, value: asyncRetVal });
                                     }, function (error) {
-                                        socket.emit('error', { toId: data.Id, reason: error });
+                                        socket.emit('error', { Id: data.Id, reason: error });
                                     });
                                 } else {
-                                    socket.emit('return', { toId: data.Id, value: retVal });
+                                    socket.emit('return', { Id: data.Id, value: retVal });
                                 }
                             }
 
                         } else {
-                            socket.emit('error', {toId: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
+                            socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
                         }
                     });
                     channel.deferred.resolve(channel);

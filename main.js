@@ -1,7 +1,6 @@
 var when = require('when');
 var io;
-var deferreds = {};
-var counter = 0;
+var deferreds = [];
 var serverChannels = {};
 var clientChannels = {};
 var getClientChannel = function (id, name) {
@@ -29,6 +28,7 @@ var getFnNames = function (channelName) {
     }
     return names;
 };
+
 /**
  *
  * @param {String} name
@@ -54,22 +54,22 @@ var RpcChannel = function (name, toExpose, authFn) {      //
                     if (when.isPromise(retVal)) {    // this is async function, so we will emit 'return' after it finishes
                         //promise must be returned in order to be treated as async
                         retVal.then(function (asyncRetVal) {
-                            socket.emit('return', { toId: data.Id, value: asyncRetVal });
+                            socket.emit('return', { Id: data.Id, value: asyncRetVal });
                         }, function (error) {
-                            socket.emit('error', { toId: data.Id, reason: error });
+                            socket.emit('error', { Id: data.Id, reason: error });
                         });
                     } else {
-                        socket.emit('return', { toId: data.Id, value: retVal });
+                        socket.emit('return', { Id: data.Id, value: retVal });
                     }
                 }       // when no value is returned we don't do anything
             } else {
-                socket.emit('error', {toId: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
+                socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
             }
         };
 
         if (that.authFn) {
             if (typeof that.authenticated[socket.id] !== "undefined") {
-                socket.on('invocation', invocationRes);
+                socket.on('call', invocationRes);
                 socket.on('disconnect', function () {
                     delete that.authenticated[socket.id];   // cleaning up
                 });
@@ -78,13 +78,28 @@ var RpcChannel = function (name, toExpose, authFn) {      //
                 socket.disconnect();    // forcibly disconnect
             }
         } else {
-            socket.on('invocation', invocationRes);
+            socket.on('call', invocationRes);
         }
 
     });
 
 //        serverChannels[channel] = ioChannel;
     return this;
+};
+
+var invocationCounter = 0;
+var endCounter = 0;
+var callToClientEnded = function (Id) {
+    if (deferreds[Id]) {
+        delete deferreds[Id];
+        endCounter++;
+        if (endCounter == invocationCounter) {
+            invocationCounter = 0;
+            endCounter = 0;
+        }
+    } else {
+        console.warn("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
+    }
 };
 
 module.exports = {
@@ -137,20 +152,22 @@ module.exports = {
                     channel.socket = io.of('/rpcC-'+data.name + '/' + socket.id);  //rpcC stands for rpc Client
                     data.fns.forEach(function (fnName) {
                         channel.fns[fnName] = function () {
-                            counter++;
-                            channel.socket.emit('invocation',
-                                {Id: counter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
+                            invocationCounter++;
+                            channel.socket.emit('call',
+                                {Id: invocationCounter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
                             );
-                            deferreds[counter] = when.defer();
-                            return deferreds[counter].promise;
+                            deferreds[invocationCounter] = when.defer();
+                            return deferreds[invocationCounter].promise;
                         };
                     });
                     channel.socket.on('connection', function (socket) {
                         socket.on('return', function (data) {
-                            deferreds[data.toId].resolve(data.value);
+                            deferreds[data.Id].resolve(data.value);
+                            callToClientEnded(data.Id);
                         });
                         socket.on('error', function (data) {
-                            deferreds[data.toId].reject(data.reason);
+                            deferreds[data.Id].reject(data.reason);
+                            callToClientEnded(data.Id);
                         });
 
                         console.log("client connected to its own rpc channel " + data.name);
@@ -171,8 +188,12 @@ module.exports = {
      * @param [auth] when provided, channel will require authentication
      */
     expose: function (name, toExpose, authFn) {
-        var channel = new RpcChannel(name, toExpose, authFn);
-        serverChannels[name] = channel;
+        if (serverChannels[name]) {
+            console.warn("This channel name(" + name + ") is already taken-ignoring the command.");
+        } else {
+            var channel = new RpcChannel(name, toExpose, authFn);
+            serverChannels[name] = channel;
+        }
     },
     loadClientChannel: function (socket, name, callback) {
         var channel = getClientChannel(socket.id, name);
