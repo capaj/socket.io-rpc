@@ -1,4 +1,4 @@
-# socket.io-rpc
+# socket.io-rpc  [![NPM version](https://badge.fury.io/js/socket.io-rpc.png)](http://badge.fury.io/js/socket.io-rpc)
 
 Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and when.js. Has two client libraries-one for general use, other for AngularJS.
 
