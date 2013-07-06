@@ -1,4 +1,6 @@
 var when = require('when');
+
+var runDate = new Date();
 var io;
 var deferreds = [];
 var serverChannels = {};
@@ -124,7 +126,11 @@ module.exports = {
                         var callback = function (authorized) {
                             if (authorized) {
                                 serverChannels[data.name].authenticated[socket.id] = null;  // we don't need any value here, existence of the ID in this object means that client is authorized
-                                socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+                                if (data.cachedDate && data.cachedDate > runDate) {
+                                    socket.emit('channelFns', {name: data.name, upToDate: true});
+                                } else {
+                                    socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+                                }
                             } else {
                                 socket.emit('AuthorizationFailed', data.name);
                             }
@@ -133,7 +139,7 @@ module.exports = {
                         if (typeof authFn === 'function') { // check whether this is private channel
                             serverChannels[data.name].authFn(data.handshake, callback);
                         } else {
-                            socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+                            callback(true);
                         }
                     } else {
                         socket.emit('channelDoesNotExist', {name: data.name});
