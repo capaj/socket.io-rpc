@@ -14,10 +14,15 @@ var server = app.listen(app.get('port'));
 app.get('/rpc/rpc-client.js', function (req, res) {  // this is not normally needed
     res.sendfile('./socket.io-rpc-client.js');
 });
+app.get('/rpc/rpc-client-angular.js', function (req, res) {  // this is not normally needed
+    res.sendfile('./socket.io-rpc-client-angular.js');
+});
 
-var io = require('socket.io').listen(server);
-var when = require('when'); // you can use any other http://promises-aplus.github.io/promises-spec/ compliant library
+var when = require('when');
 var rpc = require('../main.js');
+var io = require('socket.io').listen(server);
+io.set('transports', [ 'websocket']);
+
 rpc.createServer(io, app);
 rpc.expose('myChannel', {
     //plain JS function
@@ -44,8 +49,9 @@ io.sockets.on('connection', function (socket) {
 
 });
 
-
-
+app.get('/ng', function (req, res) {
+    res.sendfile('./tests/ng.html');
+});
 app.get('*', function (req, res) {
     res.sendfile('./tests/index.html');
 });

@@ -51,7 +51,7 @@ var RpcChannel = function (name, toExpose, authFn) {      //
         var invocationRes = function (data) {
             if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
                 var that = toExpose['this'] || toExpose;
-                var retVal = toExpose[data.fnName].apply(that, data.argsArray);
+                var retVal = toExpose[data.fnName].apply(that, data.args);
                 if (retVal) {
                     if (when.isPromise(retVal)) {    // this is async function, so we will emit 'return' after it finishes
                         //promise must be returned in order to be treated as async
@@ -159,7 +159,7 @@ module.exports = {
                         channel.fns[fnName] = function () {
                             invocationCounter++;
                             channel.socket.emit('call',
-                                {Id: invocationCounter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
+                                {Id: invocationCounter, fnName: fnName, args: Array.prototype.slice.call(arguments, 0)}
                             );
                             deferreds[invocationCounter] = when.defer();
                             return deferreds[invocationCounter].promise;
@@ -176,7 +176,7 @@ module.exports = {
                         });
 
                         console.log("client connected to its own rpc channel " + data.name);
-                        channel.onConnection(socket, channel.fns);
+                        channel.onConnection && channel.onConnection(socket, channel.fns);
 //                        channel.deferred.resolve(channel);
                     });
 
