@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body ng-app="app">
+    <h1>Angular socket.io-rpc test/showcase</h1>
+    <div ng-controller="myCtrl">
+        getTime: <span ng-bind="serverTime"></span><br>
+        asyncTest: {{ asyncTest }}
+    </div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="http://code.angularjs.org/1.2.0rc1/angular.min.js"></script>
+<script src="/rpc/rpc-client-angular.js"></script>
+<script>
+    angular.module('app', ['RPC'])
+        .controller('myCtrl',
+            function myCtrl($scope, $rpc) {
+                $rpc.connect('http://localhost');   // don't forget port, if you are not on 80
+                $rpc.loadChannel('myChannel').then(
+                        function (channel) {
+                            channel.getTime().then(function (date) {
+                                console.log('time on server is: ' + date);
+                                $scope.serverTime = date;
+                                //no need to call $scope.$apply, because it is called in $rpc;
+                            });
+                            //$scope.serverTime = channel.getTime();    //alternative to lines 22-26, does not work when promise has then function registered
+
+                            channel.myAsyncTest('passing string as argument').then(function (retVal) {
+                                console.log('server returned: ' + retVal);
+                                $scope.asyncTest = retVal;
+                            });
+
+                        }
+                );
+                $rpc.expose('clientChannel', {
+                    fnOnClient: function (param) {
+                        return 'whatever you need from client returned ' + param;
+                    }
+                }).then(
+                        function (channel) {
+                            console.log(" client channel ready");
+                        }
+                );
+            }
+    )
+</script>
+</html>
