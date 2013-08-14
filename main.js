@@ -152,7 +152,6 @@ module.exports = {
                     console.log("client with ID" + socket.id +" exposed rpc channel " + data.name);
                     var channel = getClientChannel(socket.id, data.name);
 
-//                    console.log(socket);
 //                    channel.deferred = channel.deferred || when.defer();
                     channel.fns = channel.fns || {};
                     channel.socket = io.of('/rpcC-'+data.name + '/' + socket.id);  //rpcC stands for rpc Client
@@ -184,6 +183,8 @@ module.exports = {
                     socket.emit('client channel created', data.name);
 
                 });
+
+                socket.emit('serverRunDate', runDate);
             }
         );
     },

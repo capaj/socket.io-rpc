@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/rpc/when.js"></script>    // for optimal performace download and use here minified version, use this for development or for non-performance critical scenarios
+<script src="/rpc/rpc-client.js"></script>
+<script>
+    RPC.connect('http://localhost'); // don't forget port, if you are not on 80
+    RPC.loadChannel('myChannel').then(
+            function (channel) {
+                channel.getTime().then(function (date) {
+                    console.log('time on server is: ' + date);
+
+                });
+                channel.myAsyncTest('passing string as argument').then(function(retVal){
+                    console.log('server returned: ' + retVal);
+                });
+            }
+    );
+    RPC.expose('clientChannel', {
+        fnOnClient: function (param) {
+            return 'whatever you need from client returned ' + param;
+        }
+    }).then(
+            function (channel) {
+                console.log(" client channel ready");
+            }
+    );
+</script>
+</html>

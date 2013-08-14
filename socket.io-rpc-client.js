@@ -1,3 +1,11 @@
+if (!window.console) {  //fuck IE 8 and 9 for not having a console
+    var noOp = function(){};
+    console = {
+        log: noOp,
+        warn: noOp,
+        error: noOp
+    }
+}
 // RPC client
 var RPC = (function (rpc) {
     var invocationCounter = 0;
@@ -7,6 +15,7 @@ var RPC = (function (rpc) {
     var deferreds = [];
     var baseURL;
     var rpcMaster;
+    var serverRunDate;  // used for invalidating the cache
     rpc.onBatchStarts = function () {};
     rpc.onBatchEnd = function () {};
     rpc.onCall = function () {};
@@ -26,8 +35,38 @@ var RPC = (function (rpc) {
         }
     };
 
+    /**
+     * Generates a 'safe' key for storing cache in client's local storage
+     * @param name
+     * @returns {string}
+     */
+    function getCacheKey(name) {
+        return 'SIORPC:' + baseURL + '/' + name;
+    }
+
+    function cacheIt(key, data) {
+        try{
+            localStorage[key] = JSON.stringify(data);
+        }catch(e){
+            console.warn("Error raised when writing to local stroage: " + e); // probably quoata exceeded
+        }
+    }
+
     var _loadChannel = function (name, handshakeData) {
-        rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
+        var cacheKey = getCacheKey(name);
+        var cached = localStorage[cacheKey];
+        if (cached) {
+            if (serverRunDate < JSON.parse(cached).cDate) {
+                registerRemoteFunctions(cached, false); // will register functions from cached manifest
+            } else {
+                //cache has been invalidated
+                delete localStorage[cacheKey];
+                rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
+            }
+        } else {
+            rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
+        }
+
         if (!serverChannels.hasOwnProperty(name)) {
             serverChannels[name] = {};
         }
@@ -57,29 +96,38 @@ var RPC = (function (rpc) {
         return channel._loadDef.promise;
     };
 
+    var registerRemoteFunctions = function (data, storeInCache) {
+        var channelObj = serverChannels[data.name];
+        if (storeInCache !== false) {
+            data.cDate = new Date();    // here we make a note of when the channel cache was saved
+            cacheIt(getCacheKey(data.name), data)
+        }
+        data.fnNames.forEach(function (fnName) {
+            channelObj[fnName] = function () {
+                invocationCounter++;
+                channelObj._socket.emit('call',
+                    {Id: invocationCounter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
+                );
+                if (invocationCounter == 1) {
+                    rpc.onBatchStarts(invocationCounter);
+                }
+                rpc.onCall(invocationCounter);
+                deferreds[invocationCounter] = when.defer();
+                return deferreds[invocationCounter].promise;
+            };
+        });
+
+        channelObj._loadDef.resolve(channelObj);
+    };
+
     var connect = function (url) {
         if (!rpcMaster && url) {
             baseURL = url;
             rpcMaster = io.connect(url + '/rpc-master')
-                .on('channelFns', function (data) {
-                    var channelObj = serverChannels[data.name];
-                    data.fnNames.forEach(function (fnName) {
-                        channelObj[fnName] = function () {
-                            invocationCounter++;
-                            channelObj._socket.emit('call',
-                                {Id: invocationCounter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
-                            );
-                            if (invocationCounter == 1) {
-                                rpc.onBatchStarts(invocationCounter);
-                            }
-                            rpc.onCall(invocationCounter);
-                            deferreds[invocationCounter] = when.defer();
-                            return deferreds[invocationCounter].promise;
-                        };
-                    });
-
-                    channelObj._loadDef.resolve(channelObj);
+                .on('serverRunDate', function (runDate) {
+                    serverRunDate = runDate;
                 })
+                .on('channelFns', registerRemoteFunctions)
                 .on('channelDoesNotExist', function (data) {
                     var channelObj = serverChannels[data.name];
                     channelObj._loadDef.reject();
@@ -115,7 +163,7 @@ var RPC = (function (rpc) {
                 });
 
         } else {
-            console.warn("ignoring connect command, either url null or already connected");
+            console.warn("ignoring connect command, either url of master null or already connected");
         }
     };
     rpc.connect = connect;
@@ -149,6 +197,11 @@ var RPC = (function (rpc) {
         }
     };
 
+    /**
+     * @param name {string}
+     * @param toExpose {Object} object with functions as values
+     * @returns {Promise} when.js promise
+     */
     rpc.expose = function (name, toExpose) { //
         if (!clientChannels.hasOwnProperty(name)) {
             clientChannels[name] = {};
