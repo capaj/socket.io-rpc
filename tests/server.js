@@ -1,6 +1,23 @@
+var express = require('express');
+
+var app = module.exports = express();
+app.configure(function(){
+    app.set('port', 80);
+    app.use(express.favicon());
+    app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(app.router);
+
+});
+var server = app.listen(app.get('port'));
+
+app.get('/rpc/rpc-client.js', function (req, res) {  // this is not normally needed
+    res.sendfile('./socket.io-rpc-client.js');
+});
+
 var io = require('socket.io').listen(server);
 var when = require('when'); // you can use any other http://promises-aplus.github.io/promises-spec/ compliant library
-var rpc = require('socket.io-rpc');
+var rpc = require('../main.js');
 rpc.createServer(io, app);
 rpc.expose('myChannel', {
     //plain JS function
@@ -26,3 +43,10 @@ io.sockets.on('connection', function (socket) {
     });
 
 });
+
+
+
+app.get('*', function (req, res) {
+    res.sendfile('./tests/index.html');
+});
+

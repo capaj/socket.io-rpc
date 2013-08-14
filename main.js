@@ -43,8 +43,8 @@ var RpcChannel = function (name, toExpose, authFn) {      //
     this.fns = toExpose;
     if (authFn) {
         this.authFn = authFn;
-        this.authenticated = {};
     }
+    this.authenticated = {};
     this._socket = io.of('/rpc-'+name);
     var that = this;
     this._socket.on('connection', function (socket) {
