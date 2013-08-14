@@ -1,4 +1,6 @@
 var when = require('when');
+
+var runDate = new Date();
 var io;
 var deferreds = [];
 var serverChannels = {};
@@ -41,15 +43,15 @@ var RpcChannel = function (name, toExpose, authFn) {      //
     this.fns = toExpose;
     if (authFn) {
         this.authFn = authFn;
-        this.authenticated = {};
     }
+    this.authenticated = {};
     this._socket = io.of('/rpc-'+name);
     var that = this;
     this._socket.on('connection', function (socket) {
         var invocationRes = function (data) {
             if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
                 var that = toExpose['this'] || toExpose;
-                var retVal = toExpose[data.fnName].apply(that, data.argsArray);
+                var retVal = toExpose[data.fnName].apply(that, data.args);
                 if (retVal) {
                     if (when.isPromise(retVal)) {    // this is async function, so we will emit 'return' after it finishes
                         //promise must be returned in order to be treated as async
@@ -124,7 +126,11 @@ module.exports = {
                         var callback = function (authorized) {
                             if (authorized) {
                                 serverChannels[data.name].authenticated[socket.id] = null;  // we don't need any value here, existence of the ID in this object means that client is authorized
-                                socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+                                if (data.cachedDate && data.cachedDate > runDate) {
+                                    socket.emit('channelFns', {name: data.name, upToDate: true});
+                                } else {
+                                    socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+                                }
                             } else {
                                 socket.emit('AuthorizationFailed', data.name);
                             }
@@ -133,7 +139,7 @@ module.exports = {
                         if (typeof authFn === 'function') { // check whether this is private channel
                             serverChannels[data.name].authFn(data.handshake, callback);
                         } else {
-                            socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+                            callback(true);
                         }
                     } else {
                         socket.emit('channelDoesNotExist', {name: data.name});
@@ -146,7 +152,6 @@ module.exports = {
                     console.log("client with ID" + socket.id +" exposed rpc channel " + data.name);
                     var channel = getClientChannel(socket.id, data.name);
 
-//                    console.log(socket);
 //                    channel.deferred = channel.deferred || when.defer();
                     channel.fns = channel.fns || {};
                     channel.socket = io.of('/rpcC-'+data.name + '/' + socket.id);  //rpcC stands for rpc Client
@@ -154,7 +159,7 @@ module.exports = {
                         channel.fns[fnName] = function () {
                             invocationCounter++;
                             channel.socket.emit('call',
-                                {Id: invocationCounter, fnName: fnName, argsArray: Array.prototype.slice.call(arguments, 0)}
+                                {Id: invocationCounter, fnName: fnName, args: Array.prototype.slice.call(arguments, 0)}
                             );
                             deferreds[invocationCounter] = when.defer();
                             return deferreds[invocationCounter].promise;
@@ -171,13 +176,15 @@ module.exports = {
                         });
 
                         console.log("client connected to its own rpc channel " + data.name);
-                        channel.onConnection(socket, channel.fns);
+                        channel.onConnection && channel.onConnection(socket, channel.fns);
 //                        channel.deferred.resolve(channel);
                     });
 
                     socket.emit('client channel created', data.name);
 
                 });
+
+                socket.emit('serverRunDate', runDate);
             }
         );
     },

@@ -9,6 +9,11 @@ Whole library is heavily depending on promises. When calling over network, promi
     0.0.8 -> 0.0.9 Switched from Q to when.js for better performance
 
 
+## Browser support
+    numbers are for standalone client(author's guess):
+    IE	FIREFOX	SAFARI	CHROME	OPERA	IPHONE	ANDROID
+    8.0+	3.5+	4.0+	4.0+	10.5+	2.0+	2.0+
+
 ## Usage example
 
 
@@ -46,6 +51,13 @@ Whole library is heavily depending on promises. When calling over network, promi
 ###In browser
 
     <script src="/socket.io/socket.io.js"></script>
+    <script>
+        window.define = function(factory) {
+            try{ delete window.define; } catch(e){ window.define = void 0; } // IE
+            window.when = factory();
+        };
+        window.define.amd = {};
+    </script>
     <script src="/rpc/when.js"></script>    // for optimal performace download and use here minified version, use this for development or for non-performance critical scenarios
     <script src="/rpc/rpc-client.js"></script>
     <script>
