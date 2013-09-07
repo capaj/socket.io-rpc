@@ -1,8 +1,6 @@
 tests/node_modules/
 node_modules/
-#################
-## Eclipse
-#################
+
 
 *.pydevproject
 .project
@@ -18,3 +16,4 @@ local.properties
 .settings/
 .loadpath
 .idea
+!.idea/runConfigurations/*
