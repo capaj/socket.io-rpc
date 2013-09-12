@@ -54,43 +54,45 @@ var RPC = (function (rpc) {
         }
         var channel = serverChannels[name];
         channel._loadDef = deferred;
-
-        channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
-            .on('return', function (data) {
-                deferreds[data.Id].resolve(data.value);
-                callEnded(data.Id);
-            })
-            .on('error', function (data) {
-                if (data && data.Id) {
-                    deferreds[data.Id].reject(data.reason);
+        serverRunDateDeferred.promise.then(function () {
+            channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
+                .on('return', function (data) {
+                    deferreds[data.Id].resolve(data.value);
                     callEnded(data.Id);
-                } else {
-                    console.error("Unknown error occured on RPC socket connection");
-                }
-            })
-            .on('connect_failed', function (reason) {
-                console.error('unable to connect to namespace ', reason);
-                channel._loadDef.reject(reason);
-            })
-            .on('disconnect', function (data) {
-                delete serverChannels[name];
-                console.warn("Server channel " + name + " disconnected.");
-            });
+                })
+                .on('error', function (data) {
+                    if (data && data.Id) {
+                        deferreds[data.Id].reject(data.reason);
+                        callEnded(data.Id);
+                    } else {
+                        console.error("Unknown error occured on RPC socket connection");
+                    }
+                })
+                .on('connect_failed', function (reason) {
+                    console.error('unable to connect to namespace ', reason);
+                    channel._loadDef.reject(reason);
+                })
+                .on('disconnect', function (data) {
+                    delete serverChannels[name];
+                    console.warn("Server channel " + name + " disconnected.");
+                });
 
-        var cacheKey = getCacheKey(name);
-        var cached = localStorage[cacheKey];
-        if (cached) {
-            cached = JSON.parse(cached);
-            if (serverRunDate < new Date(cached.cDate)) {
-                registerRemoteFunctions(cached, false); // will register functions from cached manifest
+            var cacheKey = getCacheKey(name);
+            var cached = localStorage[cacheKey];
+            if (cached) {
+                cached = JSON.parse(cached);
+                if (serverRunDate < new Date(cached.cDate)) {
+                    registerRemoteFunctions(cached, false); // will register functions from cached manifest
+                } else {
+                    //cache has been invalidated
+                    delete localStorage[cacheKey];
+                    rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
+                }
             } else {
-                //cache has been invalidated
-                delete localStorage[cacheKey];
                 rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
             }
-        } else {
-            rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
-        }
+        });
+
         return channel._loadDef.promise;
     };
 
@@ -187,14 +189,19 @@ var RPC = (function (rpc) {
 
     };
 
+    /**
+     * for a particular channel this will connect and prepared the channel for use, if called more than once for one
+     * channel, it will return it's instance
+     * @param {string} name
+     * @param {*} [handshakeData] custom param for authentication
+     * @returns {when.promise}
+     */
     rpc.loadChannel = function (name, handshakeData) {
         if (serverChannels.hasOwnProperty(name)) {
             return serverChannels[name]._loadDef.promise;
         } else {
             var def = when.defer();
-            serverRunDateDeferred.promise.then(function () {
-                _loadChannel(name, handshakeData, def);
-            });
+            _loadChannel(name, handshakeData, def);
             return def.promise;
         }
     };

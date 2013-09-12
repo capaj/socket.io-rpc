@@ -51,52 +51,53 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
         }
         var channel = serverChannels[name];
         channel._loadDef = deferred;
-
-        channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
-            .on('return', function (data) {
-                deferreds[data.Id].resolve(data.value);
-                $rootScope.$apply();
-                callEnded(data.Id);
-            })
-            .on('error', function (data) {
-                if (data && data.Id) {
-                    if (deferreds[data.Id]) {
-                        deferreds[data.Id].reject(data.reason);
-                        $rootScope.$apply();
-                        callEnded(data.Id);
+        serverRunDateDeferred.promise.then(function () {
+            channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
+                .on('return', function (data) {
+                    deferreds[data.Id].resolve(data.value);
+                    $rootScope.$apply();
+                    callEnded(data.Id);
+                })
+                .on('error', function (data) {
+                    if (data && data.Id) {
+                        if (deferreds[data.Id]) {
+                            deferreds[data.Id].reject(data.reason);
+                            $rootScope.$apply();
+                            callEnded(data.Id);
+                        } else {
+                            console.warn('Deffered Id ' + data.Id + ' has been already resolved/rejected.');
+                        }
                     } else {
-                        console.warn('Deffered Id ' + data.Id + ' has been already resolved/rejected.');
+                        console.error("Unknown error occured on RPC socket connection");
                     }
+
+                })
+                .on('connect_failed', function (reason) {
+                    console.error('unable to connect to namespace ', reason);
+                    channel._loadDef.reject(reason);
+                    $rootScope.$apply();
+
+                })
+                .on('disconnect', function (data) {
+                    delete serverChannels[name];
+                    console.warn("Server channel " + name + " disconnected.");
+                });
+
+            var cacheKey = getCacheKey(name);
+            var cached = localStorage[cacheKey];
+            if (cached) {
+                cached = JSON.parse(cached);
+                if (serverRunDate < new Date(cached.cDate)) {
+                    registerRemoteFunctions(cached, false); // will register functions from cached manifest
                 } else {
-                    console.error("Unknown error occured on RPC socket connection");
+                    //cache has been invalidated
+                    delete localStorage[cacheKey];
+                    rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
                 }
-
-            })
-            .on('connect_failed', function (reason) {
-                console.error('unable to connect to namespace ', reason);
-                channel._loadDef.reject(reason);
-                $rootScope.$apply();
-
-            })
-            .on('disconnect', function (data) {
-                delete serverChannels[name];
-                console.warn("Server channel " + name + " disconnected.");
-            });
-
-        var cacheKey = getCacheKey(name);
-        var cached = localStorage[cacheKey];
-        if (cached) {
-            cached = JSON.parse(cached);
-            if (serverRunDate < new Date(cached.cDate)) {
-                registerRemoteFunctions(cached, false); // will register functions from cached manifest
             } else {
-                //cache has been invalidated
-                delete localStorage[cacheKey];
                 rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
             }
-        } else {
-            rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
-        }
+        });
 
         return channel._loadDef.promise;
     };
@@ -201,14 +202,19 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
             }
 
         },
+        /**
+         * for a particular channel this will connect and prepared the channel for use, if called more than once for one
+         * channel, it will return it's instance
+         * @param {string} name
+         * @param {*} [handshakeData] custom param for authentication
+         * @returns {promise}
+         */
         loadChannel: function (name, handshakeData) {
             if (serverChannels.hasOwnProperty(name)) {
                 return serverChannels[name]._loadDef.promise;
             } else {
                 var def = $q.defer();
-                serverRunDateDeferred.promise.then(function () {
-                    _loadChannel(name, handshakeData, def);
-                });
+                _loadChannel(name, handshakeData, def);
                 return def.promise;
             }
         },
