@@ -1,0 +1,15 @@
+tests/node_modules
+
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
+.idea
+# External tool builders
+.externalToolBuilders/
