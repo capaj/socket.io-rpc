@@ -245,4 +245,21 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
     rpc.onCall = function () {};
     rpc.onEnd = function () {};
     return rpc;
+}).directive('rpcController', function ($controller, $q, $rpc) {
+    return {
+        scope: true,
+        link: function (scope, elm, attr) {
+            var ctrlName = attr.rpcController;
+            var promise = $rpc.loadChannel(attr.rpcChannel);
+            promise.then(function (channel) {
+                scope.rpc = channel;
+                var ctrl = $controller(ctrlName, {
+                    $scope: scope
+                });
+                elm.children().data('$ngControllerController', ctrl);
+            }, function (err) {
+                console.error("Cannot instantiate rpc-controller - channel failed to load");
+            });
+        }
+    };
 });

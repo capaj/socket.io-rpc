@@ -7,7 +7,7 @@ Whole library is heavily depending on promises. When calling over network, promi
 
 ## ChangeLog
     0.0.8 -> 0.0.9 Switched from Q to when.js for better performance
-
+    0.1.3 -> 0.1.4 Added a directive to angularJS client to make instantiating a controller with rpc channel less of a chore
 
 ## Browser support
     numbers are for standalone client(author's guess):
@@ -61,7 +61,7 @@ Whole library is heavily depending on promises. When calling over network, promi
     <script src="/rpc/when.js"></script>    // for optimal performace download and use here minified version, use this for development or for non-performance critical scenarios
     <script src="/rpc/rpc-client.js"></script>
     <script>
-        RPC.connect('http://localhost'); // don't forget port, if you are not on 80
+        RPC.connect('http://localhost:8080');
         RPC.loadChannel('myChannel').then(
             function (channel) {
                 channel.getTime().then(function (date) {
@@ -87,38 +87,51 @@ Whole library is heavily depending on promises. When calling over network, promi
 
 ###In browser for AngularJS
 
+    <body>
+        <h1>Angular socket.io-rpc test/showcase</h1>
+        <!--You can also use regular ng-controller, but then you have to load channel yourself by calling
+        $rpc.loadChannel('myChannel'); inside it-->
+        <div rpc-controller="testCtrl" rpc-channel="myChannel">
+            getTime: <span ng-bind="serverTime"></span><br>
+            asyncTest: {{ asyncTest }}
+        </div>
+
+    </body>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="http://code.angularjs.org/1.2.0-rc.2/angular.js"></script>
     <script src="/rpc/rpc-client-angular.js"></script>
     <script>
-        angular.module('app', ['RPC']).controller('myCtrl', 
-            function myCtrl($scope, $rpc){
-                $rpc.connect('http://localhost');   // don't forget port, if you are not on 80
-                $rpc.loadChannel('myChannel').then(
-                    function (channel) {
-                        channel.getTime().then(function (date) {
-                            console.log('time on server is: ' + date);
-                            //no need to call $scope.$apply, because it is called in $rpc;
-                        });
-                        // Angular templating engine can interpret promises on its own, so if you bind serverTime to template, it should show the value once it resolves
-                        $scope.serverTime = channel.getTime();
-                        
-                        channel.myAsyncTest('passing string as argument').then(function(retVal){
-                            console.log('server returned: ' + retVal);
-                        });
-                        
-                    }
-                );
+        angular.module('app', ['RPC'])
+            .controller('testCtrl',
+            function ($scope, $rpc) {
+                $scope.rpc.getTime().then(function (date) {
+                    console.log('time on server is: ' + date);
+                    $scope.serverTime = date;
+                    //no need to call $scope.$apply, because it is called in $rpc;
+                });
+                $scope.rpc.myAsyncTest('passing string as argument').then(function (retVal) {
+                    console.log('server returned: ' + retVal);
+                    $scope.asyncTest = retVal;
+                });
+                console.log('ctr ' + new Date().toJSON());
+
                 $rpc.expose('clientChannel', {
                     fnOnClient: function (param) {
                         return 'whatever you need from client returned ' + param;
                     }
                 }).then(
                     function (channel) {
-                       console.log(" client channel ready");
+                        console.log(" client channel ready");
                     }
                 );
             }
-        )
+        ).run(function ($rpc, $rootScope) {
+                $rpc.connect('http://localhost:8080');   // don't forget port, if you are not on 80
+                console.log('run ' + new Date().toJSON());
+            });
+
+        var injector = angular.bootstrap(document, ['app']);
+
     </script>
 
 
