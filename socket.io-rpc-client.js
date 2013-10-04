@@ -140,8 +140,7 @@ var RPC = (function (rpc) {
                     socket.on('call', function (data) {
                         var exposed = channel.fns;
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
-                            var that = exposed['this'] || exposed;
-                            var retVal = exposed[data.fnName].apply(that, data.args);
+                            var retVal = exposed[data.fnName].apply(this, data.args);
                             if (retVal) {
                                 if (when.isPromise(retVal)) {    // this is async function, so we will emit 'return' after it finishes
                                     //promise must be returned in order to be treated as async
