@@ -25,6 +25,7 @@ Whole library is heavily depending on promises. When calling over network, promi
     rpc.expose('myChannel', {
         //plain JS function
         getTime: function () {
+            console.log('Client ID is: ' + this.id);
             return new Date();
         },
         //returns a promise, which when resolved will resolve promise on client-side with the result
