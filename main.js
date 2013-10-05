@@ -51,18 +51,18 @@ var RpcChannel = function (name, toExpose, authFn) {      //
         var invocationRes = function (data) {
             if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
                 var retVal = toExpose[data.fnName].apply(this, data.args);
-                if (retVal) {
-                    if (when.isPromise(retVal)) {    // this is async function, so we will emit 'return' after it finishes
-                        //promise must be returned in order to be treated as async
-                        retVal.then(function (asyncRetVal) {
-                            socket.emit('return', { Id: data.Id, value: asyncRetVal });
-                        }, function (error) {
-                            socket.emit('error', { Id: data.Id, reason: error });
-                        });
-                    } else {
-                        socket.emit('return', { Id: data.Id, value: retVal });
-                    }
-                }       // when no value is returned we don't do anything
+
+                if (when.isPromiseLike(retVal)) {    // this is async function, so we will emit 'return' after it finishes
+                    //promise must be returned in order to be treated as async
+                    retVal.then(function (asyncRetVal) {
+                        socket.emit('return', { Id: data.Id, value: asyncRetVal });
+                    }, function (error) {
+                        socket.emit('error', { Id: data.Id, reason: error });
+                    });
+                } else {
+                    socket.emit('return', { Id: data.Id, value: retVal });
+                }
+
             } else {
                 socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
             }
@@ -99,7 +99,7 @@ var callToClientEnded = function (Id) {
             endCounter = 0;
         }
     } else {
-        console.warn("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
+        console.error("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
     }
 };
 

@@ -145,32 +145,27 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 
                 })
                 .on('client channel created', function (name) {
+
                     var channel = clientChannels[name];
                     var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.socket.sessionid);  //rpcC stands for rpc Client
                     channel.socket = socket;
                     socket.on('call', function (data) {
                         var exposed = channel.fns;
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
+
                             var retVal = exposed[data.fnName].apply(this, data.args);
-                            if (retVal) {
-                                //TODO investigate if the next block could be changed to $q.when() call
-                                if (typeof retVal.then === 'function') {    // this is async function, so we will emit 'return' after it finishes
-                                    //promise must be returned in order to be treated as async
-                                    retVal.then(function (asyncRetVal) {
-                                        socket.emit('return', { Id: data.Id, value: asyncRetVal });
-                                    }, function (error) {
-                                        socket.emit('error', { Id: data.Id, reason: error });
-                                    });
-                                } else {
-                                    socket.emit('return', { Id: data.Id, value: retVal });
-                                }
-                            }
+                            $q.when(retVal).then(function (retVal) {
+                                socket.emit('return', { Id: data.Id, value: retVal });
+                            }, function (error) {
+                                socket.emit('error', { Id: data.Id, reason: error });
+                            });
 
                         } else {
                             socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
                         }
                     });
                     channel.deferred.resolve(channel);
+
                 });
 
         } else {

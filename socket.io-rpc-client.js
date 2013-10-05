@@ -141,8 +141,8 @@ var RPC = (function (rpc) {
                         var exposed = channel.fns;
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
                             var retVal = exposed[data.fnName].apply(this, data.args);
-                            if (retVal) {
-                                if (when.isPromise(retVal)) {    // this is async function, so we will emit 'return' after it finishes
+
+                                if (when.isPromiseLike(retVal)) {    // this is async function, so we will emit 'return' after it finishes
                                     //promise must be returned in order to be treated as async
                                     retVal.then(function (asyncRetVal) {
                                         socket.emit('return', { Id: data.Id, value: asyncRetVal });
@@ -152,7 +152,6 @@ var RPC = (function (rpc) {
                                 } else {
                                     socket.emit('return', { Id: data.Id, value: retVal });
                                 }
-                            }
 
                         } else {
                             socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
