@@ -1,5 +1,6 @@
 // RPC client
 var RPC = (function (rpc) {
+    var noop = function(){};
     var invocationCounter = 0;
     var endCounter = 0;
     var serverChannels = {};
@@ -12,10 +13,10 @@ var RPC = (function (rpc) {
     serverRunDateDeferred.promise.then(function (date) {
         serverRunDate = new Date(date);
     });
-    rpc.onBatchStarts = function () {};
-    rpc.onBatchEnd = function () {};
-    rpc.onCall = function () {};
-    rpc.onEnd = function () {};
+    rpc.onBatchStarts = noop;
+    rpc.onBatchEnd = noop;
+    rpc.onCall = noop;
+    rpc.onEnd = noop;
     var callEnded = function (Id) {
         if (deferreds[Id]) {
             delete deferreds[Id];
@@ -120,6 +121,9 @@ var RPC = (function (rpc) {
         }
     };
 
+    /**
+     * @param {String} url
+     */
     var connect = function (url) {
         if (!rpcMaster && url) {
             baseURL = url;
@@ -142,16 +146,17 @@ var RPC = (function (rpc) {
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
                             var retVal = exposed[data.fnName].apply(this, data.args);
 
-                                if (when.isPromiseLike(retVal)) {    // this is async function, so we will emit 'return' after it finishes
-                                    //promise must be returned in order to be treated as async
-                                    retVal.then(function (asyncRetVal) {
-                                        socket.emit('return', { Id: data.Id, value: asyncRetVal });
-                                    }, function (error) {
-                                        socket.emit('error', { Id: data.Id, reason: error });
-                                    });
-                                } else {
-                                    socket.emit('return', { Id: data.Id, value: retVal });
-                                }
+                            if (when.isPromiseLike(retVal)) {
+                                //promise must be returned in order to be treated as async
+                                retVal.then(function (asyncRetVal) {
+                                    // this is async function, so we will emit 'return' after it finishes
+                                    socket.emit('return', { Id: data.Id, value: asyncRetVal });
+                                }, function (error) {
+                                    socket.emit('error', { Id: data.Id, reason: error });
+                                });
+                            } else {
+                                socket.emit('return', { Id: data.Id, value: retVal });
+                            }
 
                         } else {
                             socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
@@ -207,7 +212,7 @@ var RPC = (function (rpc) {
     /**
      * @param name {string}
      * @param toExpose {Object} object with functions as values
-     * @returns {Promise} when.js promise
+     * @returns {when.promise}
      */
     rpc.expose = function (name, toExpose) { //
         if (!clientChannels.hasOwnProperty(name)) {

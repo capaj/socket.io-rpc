@@ -127,7 +127,9 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
         }
 
     };
-
+    /**
+     * @param {String} url
+     */
     var connect = function (url) {
         if (!rpcMaster && url) {
             baseURL = url;
@@ -234,10 +236,11 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
             return channel.deferred.promise;
         }
     };
-    rpc.onBatchStarts = function () {};
-    rpc.onBatchEnd = function () {};
-    rpc.onCall = function () {};
-    rpc.onEnd = function () {};
+    var nop = angular.noop;
+    rpc.onBatchStarts = nop;
+    rpc.onBatchEnd = nop;
+    rpc.onCall = nop;
+    rpc.onEnd = nop;
     return rpc;
 }).directive('rpcController', function ($controller, $q, $rpc) {
     return {

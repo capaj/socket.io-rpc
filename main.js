@@ -35,8 +35,8 @@ var getFnNames = function (channelName) {
  *
  * @param {String} name
  * @param {Object} toExpose
- * @param [Function] authFn
- * @returns {*}
+ * @param {Function} [authFn] should return boolean value, if true access to a channel is allowed
+ * @returns {RpcChannel}
  * @constructor
  */
 var RpcChannel = function (name, toExpose, authFn) {      //
@@ -84,7 +84,6 @@ var RpcChannel = function (name, toExpose, authFn) {      //
 
     });
 
-//        serverChannels[channel] = ioChannel;
     return this;
 };
 
@@ -99,7 +98,7 @@ var callToClientEnded = function (Id) {
             endCounter = 0;
         }
     } else {
-        console.error("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
+        console.warn("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
     }
 };
 
@@ -191,7 +190,7 @@ module.exports = {
      *  Makes a channel available for clients
      * @param {String} name
      * @param {Object} toExpose
-     * @param [auth] when provided, channel will require authentication
+     * @param {Function} [authFn] when provided, channel will require authentication
      */
     expose: function (name, toExpose, authFn) {
         if (serverChannels[name]) {
