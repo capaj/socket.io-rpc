@@ -194,7 +194,7 @@ module.exports = {
      */
     expose: function (name, toExpose, authFn) {
         if (serverChannels[name]) {
-            console.warn("This channel name(" + name + ") is already taken-ignoring the command.");
+            console.warn("This channel name(" + name + ") is already exposed-ignoring the command.");
         } else {
             var channel = new RpcChannel(name, toExpose, authFn);
             serverChannels[name] = channel;
