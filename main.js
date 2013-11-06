@@ -50,7 +50,7 @@ var RpcChannel = function (name, toExpose, authFn) {      //
     this._socket.on('connection', function (socket) {
         var invocationRes = function (data) {
             if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
-                var retVal = toExpose[data.fnName].apply(this, data.args);
+                var retVal = toExpose[data.fnName].apply(socket, data.args);
 
                 if (when.isPromiseLike(retVal)) {    // this is async function, so we will emit 'return' after it finishes
                     //promise must be returned in order to be treated as async
