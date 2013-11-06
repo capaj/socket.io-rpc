@@ -115,7 +115,14 @@ module.exports = {
                 res.sendfile('node_modules/when/when.js');
             });
         }
-        io = ioP;
+		io = ioP;
+
+		io.sockets.on('connection', function (socket) {
+			socket.on('disconnect', function() {
+				delete clientChannels[socket.id];
+			});
+		});
+
         return io
             .of('/rpc-master')
             .on('connection', function (socket) {
@@ -194,7 +201,7 @@ module.exports = {
      */
     expose: function (name, toExpose, authFn) {
         if (serverChannels[name]) {
-            console.warn("This channel name(" + name + ") is already taken-ignoring the command.");
+            console.warn("This channel name(" + name + ") is already exposed-ignoring the command.");
         } else {
             var channel = new RpcChannel(name, toExpose, authFn);
             serverChannels[name] = channel;
@@ -203,8 +210,13 @@ module.exports = {
     loadClientChannel: function (socket, name, callback) {
         var channel = getClientChannel(socket.id, name);
         channel.onConnection = callback;
-        socket.on('disconnect', function () {
-            delete clientChannels[socket.id];
+        socket.on('disconnect', function onDisconnect() {
+			var err = function () {
+				throw new Error('Client channel disconnected, this channel is not available anymore')
+			};
+			for (var method in channel.fns) {
+				channel.fns[method] = err;	// references to client channel might be hold in client code, so we need to invalidate them
+			}
         });
     }
 };
