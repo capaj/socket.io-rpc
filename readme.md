@@ -1,16 +1,17 @@
 # socket.io-rpc  [![NPM version](https://badge.fury.io/js/socket.io-rpc.png)](http://badge.fury.io/js/socket.io-rpc)
 
+Main purpose is to bring more order to your code for browser-server realtime interaction.
 Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and when.js. Has two client libraries-one for general use, other for AngularJS.
-
-Whole library is heavily depending on promises. When calling over network, promise is always returned.
+Angular.js lib contains special rpc-controller, which when compiled asynchronously loads server channel and instantiatel classic angular controller.
+Whole library is depending on promises. When calling over network, promise is always returned.
 
 
 ## ChangeLog
     0.0.8 -> 0.0.9 Switched from Q to when.js for better performance
     0.1.3 -> 0.1.4 Added a directive to angularJS client to make instantiating a controller with rpc channel less of a chore
-
+    
 ## Browser support
-    numbers are for standalone client(author's guess):
+    numbers are for standalone(but angular.js should be similar) client(author's guess):
     IE	FIREFOX	SAFARI	CHROME	OPERA	IPHONE	ANDROID
     8.0+	3.5+	4.0+	4.0+	10.5+	2.0+	2.0+
 
