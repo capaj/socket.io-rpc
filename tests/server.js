@@ -42,7 +42,7 @@ rpc.expose('myChannel', {
 
 
 io.sockets.on('connection', function (socket) {
-    rpc.loadClientChannel(socket,'clientChannel', function (socket, fns) {
+    rpc.loadClientChannel(socket,'clientChannel').then(function (fns) {
         fns.fnOnClient("calling client ").then(function (ret) {
             console.log("client returned: " + ret);
         });

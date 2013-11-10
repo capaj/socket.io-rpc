@@ -181,8 +181,8 @@ module.exports = {
                         });
 
                         console.log("client connected to its own rpc channel " + data.name);
-                        channel.onConnection && channel.onConnection(socket, channel.fns);
-//                        channel.deferred.resolve(channel);
+
+                        channel.deferred.resolve(channel.fns);
                     });
 
                     socket.emit('client channel created', data.name);
@@ -207,9 +207,19 @@ module.exports = {
             serverChannels[name] = channel;
         }
     },
-    loadClientChannel: function (socket, name, callback) {
+    /**
+     *
+     * @param socket
+     * @param name
+     * @returns {Promise}
+     */
+    loadClientChannel: function (socket, name) {
         var channel = getClientChannel(socket.id, name);
-        channel.onConnection = callback;
+        /**
+         * @type {Promise}
+         */
+        channel.deferred = when.defer();
+
         socket.on('disconnect', function onDisconnect() {
 			var err = function () {
 				throw new Error('Client channel disconnected, this channel is not available anymore')
@@ -218,5 +228,6 @@ module.exports = {
 				channel.fns[method] = err;	// references to client channel might be hold in client code, so we need to invalidate them
 			}
         });
+        return channel.deferred.promise;
     }
 };
