@@ -41,7 +41,7 @@ Whole library is depending on promises. When calling over network, promise is al
 
 
     io.sockets.on('connection', function (socket) {
-        rpc.loadClientChannel(socket,'clientChannel').then(function (socket, fns) {
+        rpc.loadClientChannel(socket,'clientChannel').then(function (fns) {
             fns.fnOnClient("calling client ").then(function (ret) {
                 console.log("client returned: " + ret);
             });
