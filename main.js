@@ -218,7 +218,9 @@ module.exports = {
         /**
          * @type {Promise}
          */
-        channel.deferred = when.defer();
+        if (!channel.deferred) {
+            channel.deferred = when.defer();
+        }
 
         socket.on('disconnect', function onDisconnect() {
 			var err = function () {
