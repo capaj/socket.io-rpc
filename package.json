@@ -1,6 +1,6 @@
 {
     "name": "socket.io-rpc",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "private": false,
     "author": "capaj <capajj@gmail.com>",
     "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
@@ -21,7 +21,7 @@
         "rmi"
     ],
     "dependencies": {
-        "when": "2.5.1"
+        "when": "~2.6"
 
     },
     "license": "MIT"

@@ -198,14 +198,17 @@ module.exports = {
      * @param {String} name
      * @param {Object} toExpose
      * @param {Function} [authFn] when provided, channel will require authentication
+	 * @returns {SocketNamespace}
      */
     expose: function (name, toExpose, authFn) {
         if (serverChannels[name]) {
             console.warn("This channel name(" + name + ") is already exposed-ignoring the command.");
+			return serverChannels[name]._socket;
         } else {
             var channel = new RpcChannel(name, toExpose, authFn);
             serverChannels[name] = channel;
-        }
+			return channel._socket;
+		}
     },
     loadClientChannel: function (socket, name, callback) {
         var channel = getClientChannel(socket.id, name);
