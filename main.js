@@ -50,7 +50,7 @@ var RpcChannel = function (name, toExpose, authFn) {      //
     this._socket.on('connection', function (socket) {
         var invocationRes = function (data) {
             if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
-                var retVal = toExpose[data.fnName].apply(this, data.args);
+                var retVal = toExpose[data.fnName].apply(socket, data.args);
 
                 if (when.isPromiseLike(retVal)) {    // this is async function, so we will emit 'return' after it finishes
                     //promise must be returned in order to be treated as async
@@ -171,18 +171,21 @@ module.exports = {
                         };
                     });
                     channel.socket.on('connection', function (socket) {
-                        socket.on('return', function (data) {
-                            deferreds[data.Id].resolve(data.value);
-                            callToClientEnded(data.Id);
-                        });
-                        socket.on('error', function (data) {
-                            deferreds[data.Id].reject(data.reason);
-                            callToClientEnded(data.Id);
-                        });
+                        if (channel.clDef) {
+                            socket.on('return', function (data) {
+                                deferreds[data.Id].resolve(data.value);
+                                callToClientEnded(data.Id);
+                            });
+                            socket.on('error', function (data) {
+                                deferreds[data.Id].reject(data.reason);
+                                callToClientEnded(data.Id);
+                            });
 
-                        console.log("client connected to its own rpc channel " + data.name);
-                        channel.onConnection && channel.onConnection(socket, channel.fns);
-//                        channel.deferred.resolve(channel);
+                            console.log("client connected to its own rpc channel " + data.name);
+
+                            channel.clDef.resolve(channel.fns);
+
+                        }
                     });
 
                     socket.emit('client channel created', data.name);
@@ -210,16 +213,29 @@ module.exports = {
 			return channel._socket;
 		}
     },
-    loadClientChannel: function (socket, name, callback) {
+    /**
+     *
+     * @param socket
+     * @param name
+     * @returns {Promise}
+     */
+    loadClientChannel: function (socket, name) {
         var channel = getClientChannel(socket.id, name);
-        channel.onConnection = callback;
-        socket.on('disconnect', function onDisconnect() {
-			var err = function () {
-				throw new Error('Client channel disconnected, this channel is not available anymore')
-			};
-			for (var method in channel.fns) {
-				channel.fns[method] = err;	// references to client channel might be hold in client code, so we need to invalidate them
-			}
-        });
+        /**
+         * @type {Promise}
+         */
+        if (!channel.clDef) {
+            channel.clDef = when.defer();
+
+            socket.on('disconnect', function onDisconnect() {
+                var err = function () {
+                    throw new Error('Client channel disconnected, this channel is not available anymore')
+                };
+                for (var method in channel.fns) {
+                    channel.fns[method] = err;	// references to client channel might be hold in client code, so we need to invalidate them
+                }
+            });
+        }
+        return channel.clDef.promise;
     }
 };
