@@ -147,15 +147,19 @@ var RPC = (function (rpc) {
                             var retVal = exposed[data.fnName].apply(this, data.args);
 
                             if (when.isPromiseLike(retVal)) {
-                                //promise must be returned in order to be treated as async
+                                //async - promise must be returned in order to be treated as async
                                 retVal.then(function (asyncRetVal) {
-                                    // this is async function, so we will emit 'return' after it finishes
                                     socket.emit('return', { Id: data.Id, value: asyncRetVal });
                                 }, function (error) {
                                     socket.emit('error', { Id: data.Id, reason: error });
                                 });
                             } else {
-                                socket.emit('return', { Id: data.Id, value: retVal });
+								//synchronous
+								if (retVal instanceof Error) {
+									socket.emit('error', { Id: data.Id, reason: retVal });
+								} else {
+									socket.emit('return', { Id: data.Id, value: retVal });
+								}
                             }
 
                         } else {

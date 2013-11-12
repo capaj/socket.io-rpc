@@ -157,7 +157,12 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 
                             var retVal = exposed[data.fnName].apply(this, data.args);
                             $q.when(retVal).then(function (retVal) {
-                                socket.emit('return', { Id: data.Id, value: retVal });
+								if (retVal instanceof Error) {
+									// when synchronously returned Error
+									socket.emit('error', { Id: data.Id, reason: retVal });
+								} else {
+									socket.emit('return', { Id: data.Id, value: retVal });
+								}
                             }, function (error) {
                                 socket.emit('error', { Id: data.Id, reason: error });
                             });

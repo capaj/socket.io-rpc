@@ -9,7 +9,8 @@ Whole library is depending on promises. When calling over network, promise is al
 ## ChangeLog
     0.0.8 -> 0.0.9 Switched from Q to when.js for better performance
     0.1.3 -> 0.1.4 Added a directive to angularJS client to make instantiating a controller with rpc channel less of a chore
-    
+    0.2.5 -> 0.3.0 Synchronous resolution of a call can be now also rejected without need to create and reject a promise by simply returning an instance of Error
+
 ## Browser support
     numbers are for standalone(but angular.js should be similar) client(author's guess):
     IE	FIREFOX	SAFARI	CHROME	OPERA	IPHONE	ANDROID

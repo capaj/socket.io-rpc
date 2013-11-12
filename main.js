@@ -53,14 +53,19 @@ var RpcChannel = function (name, toExpose, authFn) {      //
                 var retVal = toExpose[data.fnName].apply(socket, data.args);
 
                 if (when.isPromiseLike(retVal)) {    // this is async function, so we will emit 'return' after it finishes
-                    //promise must be returned in order to be treated as async
+                    //async - promise as a return value indicates that method is async
                     retVal.then(function (asyncRetVal) {
                         socket.emit('return', { Id: data.Id, value: asyncRetVal });
                     }, function (error) {
                         socket.emit('error', { Id: data.Id, reason: error });
                     });
                 } else {
-                    socket.emit('return', { Id: data.Id, value: retVal });
+					//synchronous
+					if (retVal instanceof Error) {
+						socket.emit('error', { Id: data.Id, reason: retVal });
+					} else {
+						socket.emit('return', { Id: data.Id, value: retVal });
+					}
                 }
 
             } else {
