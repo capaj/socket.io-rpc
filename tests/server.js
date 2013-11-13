@@ -38,11 +38,17 @@ rpc.expose('myChannel', {
         },1000);
         return deffered.promise;
     }
+}, function (handshake, CB) {	//this parameter is optional
+	if (handshake.passw == '123') {
+		CB(true);
+	} else {
+		CB(false);
+	}
 });
 
 
 io.sockets.on('connection', function (socket) {
-    rpc.loadClientChannel(socket,'clientChannel').then(function (fns) {
+    rpc.loadClientChannel(socket, 'clientChannel').then(function (fns) {
         fns.fnOnClient("calling client ").then(function (ret) {
             console.log("client returned: " + ret);
         });

@@ -258,7 +258,15 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 			return {
 				pre: function (scope, iElement, attr, controller) {
 					var ctrlName = attr.rpcController;
-					var promise = $rpc.loadChannel(attr.rpcChannel);
+					if (attr.rpcAuth) {
+						var authGetter = $rpc.auth[attr.rpcAuth];
+						if (typeof authGetter !== 'function') {
+							throw new Error('no auth getter function found under ' + attr.rpcAuth);
+						}
+					}
+
+					var authCallResult = authGetter();
+					var promise = $q.all($rpc.loadChannel(attr.rpcChannel), $q.when(authCallResult));
 					promise.then(function (channel) {
 						scope.rpc = channel;
 						var ctrl = $controller(ctrlName, {

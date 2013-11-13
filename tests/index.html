@@ -21,7 +21,7 @@
 <script src="/rpc/rpc-client.js"></script>
 <script>
     RPC.connect('http://localhost:8080');
-    RPC.loadChannel('myChannel').then(
+    RPC.loadChannel('myChannel', {passw: '123'}).then(
         function (channel) {
             channel.getTime().then(function (date) {
                 console.log('time on server is: ' + date);

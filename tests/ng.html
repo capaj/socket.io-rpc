@@ -7,7 +7,7 @@
     <h1>Angular socket.io-rpc test/showcase</h1>
     <!--You can also use regular ng-controller, but then you have to load channel yourself by calling
     $rpc.loadChannel('myChannel'); inside it-->
-    <div rpc-controller="testCtrl" rpc-channel="myChannel">
+    <div rpc-controller="testCtrl" rpc-channel="myChannel" rpc-auth="local">
         getTime: <span ng-bind="serverTime"></span><br>
         asyncTest: {{ asyncTest }}
     </div>
@@ -43,6 +43,9 @@
         }
     ).run(function ($rpc, $rootScope) {
             $rpc.connect('http://localhost:8080');   // don't forget port, if you are not on 80
+            $rpc.auth.local = function () {
+                return {passw: '123'};
+            };
             console.log('run ' + new Date().toJSON());
         });
 
