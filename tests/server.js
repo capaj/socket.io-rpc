@@ -38,12 +38,12 @@ rpc.expose('myChannel', {
         },1000);
         return deffered.promise;
     }
-}, function (handshake, CB) {	//this parameter is optional
-	if (handshake.passw == '123') {
-		CB(true);
-	} else {
-		CB(false);
-	}
+//}, function (handshake, CB) {	//second parameter is optional for authenticated channels
+//	if (handshake.passw == '123') {
+//		CB(true);
+//	} else {
+//		CB(false);
+//	}
 });
 
 
