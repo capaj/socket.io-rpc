@@ -16,6 +16,14 @@ Whole library is depending on promises. When calling over network, promise is al
     IE	FIREFOX	SAFARI	CHROME	OPERA	IPHONE	ANDROID
     8.0+	3.5+	4.0+	4.0+	10.5+	2.0+	2.0+
 
+## Internal callbacks
+There are 4 internal callbacks, which might help you in case you need to be notified of a request beginning and ending:
+
+    onBatchStarts   //called when invocation counter equals 1
+    onBatchEnd      //called when invocation counter equals endCounter
+    onCall          //called when invocation counter equals endCounter
+    onEnd           //called when one call is returned
+
 ## Usage example
 
 

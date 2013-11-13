@@ -214,7 +214,10 @@ module.exports = {
 			return serverChannels[name]._socket;
         } else {
             var channel = new RpcChannel(name, toExpose, authFn);
-            serverChannels[name] = channel;
+			if (toExpose._socket) {
+				throw new Error('Failed to expose channel, _socket property is reserved for socket namespace');
+			}
+			serverChannels[name] = channel;
 			return channel._socket;
 		}
     },

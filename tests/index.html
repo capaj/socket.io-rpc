@@ -31,6 +31,9 @@
                 console.log('server returned: ' + retVal);
                 document.getElementById('asyncText').innerText = retVal;
             });
+            channel._socket.on('disconnect', function () {
+                console.log("channel disconnected!");
+            });
         }
     );
     RPC.expose('clientChannel', {

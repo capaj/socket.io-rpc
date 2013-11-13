@@ -13,10 +13,12 @@ var RPC = (function (rpc) {
     serverRunDateDeferred.promise.then(function (date) {
         serverRunDate = new Date(date);
     });
-    rpc.onBatchStarts = noop;
-    rpc.onBatchEnd = noop;
-    rpc.onCall = noop;
-    rpc.onEnd = noop;
+	//These are internal callbacks of socket.io-rpc, use them if you want to implement something like a global loader indicator
+    rpc.onBatchStarts = noop;	//called when invocation counter equals 1
+    rpc.onBatchEnd = noop;		//called when invocation counter equals endCounter
+    rpc.onCall = noop;			//called when invocation counter equals endCounter
+    rpc.onEnd = noop;			//called when one call is returned
+
     var callEnded = function (Id) {
         if (deferreds[Id]) {
             delete deferreds[Id];
@@ -140,7 +142,7 @@ var RPC = (function (rpc) {
                 .on('client channel created', function (name) {
                     var channel = clientChannels[name];
                     var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.socket.sessionid);  //rpcC stands for rpc Client
-                    channel.socket = socket;
+                    channel._socket = socket;
                     socket.on('call', function (data) {
                         var exposed = channel.fns;
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
@@ -228,7 +230,10 @@ var RPC = (function (rpc) {
         var fnNames = [];
         for(var fn in toExpose)
         {
-            fnNames.push(fn);
+			if (fn === '_socket') {
+				throw new Error('Failed to expose channel, _socket property is reserved for socket namespace');
+			}
+			fnNames.push(fn);
         }
 
         rpcMaster.emit('expose channel', {name: name, fns: fnNames});

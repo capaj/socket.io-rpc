@@ -150,7 +150,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 
                     var channel = clientChannels[name];
                     var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.socket.sessionid);  //rpcC stands for rpc Client
-                    channel.socket = socket;
+                    channel._socket = socket;
                     socket.on('call', function (data) {
                         var exposed = channel.fns;
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
@@ -234,6 +234,9 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
             var fnNames = [];
             for(var fn in toExpose)
             {
+				if (fn === '_socket') {
+					throw new Error('Failed to expose channel, _socket property is reserved for socket namespace');
+				}
                 fnNames.push(fn);
             }
 
@@ -242,10 +245,11 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
         }
     };
     var nop = angular.noop;
-    rpc.onBatchStarts = nop;
-    rpc.onBatchEnd = nop;
-    rpc.onCall = nop;
-    rpc.onEnd = nop;
+	//These are internal callbacks of socket.io-rpc, use them if you want to implement something like a global loader indicator
+    rpc.onBatchStarts = nop;	//called when invocation counter equals 1
+    rpc.onBatchEnd = nop;		//called when invocation counter equals endCounter
+    rpc.onCall = nop;			//called when invocation counter equals endCounter
+    rpc.onEnd = nop;			//called when one call is returned
     return rpc;
 }).directive('rpcController', function ($controller, $q, $rpc) {
     return {
