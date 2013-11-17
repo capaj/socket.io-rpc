@@ -204,10 +204,8 @@ module.exports = {
                             callToClientEnded(data.Id);
                         });
 
-                        console.log("client connected to its own rpc channel " + data.name);
-
+//                        console.log("client connected to its own rpc channel " + data.name);
                         channel.dfd.resolve(channel.fns);
-
 
                     });
 
