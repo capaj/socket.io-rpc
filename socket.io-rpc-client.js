@@ -135,12 +135,14 @@ var RPC = (function (rpc) {
 	};
 
     /**
-     * @param {String} url
+     * connects to remote server which exposes RPC calls
+     * @param {String} url to connect to, for example http://localhost:8080
+     * @param {Object} handshake for global authorization
      */
-    var connect = function (url) {
+    var connect = function (url, handshake) {
         if (!rpcMaster && url) {
             baseURL = url;
-            rpcMaster = io.connect(url + '/rpc-master')
+            rpcMaster = io.connect(url + '/rpc-master', handshake)
                 .on('serverRunDate', function (runDate) {
                     serverRunDateDeferred.resolve(runDate);
                 })
