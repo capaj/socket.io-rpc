@@ -45,50 +45,24 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
     }
 
     var _loadChannel = function (name, handshakeData, deferred) {
-        rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
         if (!serverChannels.hasOwnProperty(name)) {
             serverChannels[name] = {};
         }
         var channel = serverChannels[name];
         channel._loadDef = deferred;
         serverRunDateDeferred.promise.then(function () {
-            channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
-                .on('return', function (data) {
-                    deferreds[data.Id].resolve(data.value);
-                    $rootScope.$apply();
-                    callEnded(data.Id);
-                })
-                .on('error', function (data) {
-                    if (data && data.Id) {
-                        if (deferreds[data.Id]) {
-                            deferreds[data.Id].reject(data.reason);
-                            $rootScope.$apply();
-                            callEnded(data.Id);
-                        } else {
-                            console.warn('Deffered Id ' + data.Id + ' has been already resolved/rejected.');
-                        }
-                    } else {
-                        console.error("Unknown error occured on RPC socket connection");
-                    }
-
-                })
-                .on('connect_failed', function (reason) {
-                    console.error('unable to connect to namespace ', reason);
-                    channel._loadDef.reject(reason);
-                    $rootScope.$apply();
-
-                })
-                .on('disconnect', function (data) {
-                    delete serverChannels[name];
-                    console.warn("Server channel " + name + " disconnected.");
-                });
 
             var cacheKey = getCacheKey(name);
             var cached = localStorage[cacheKey];
             if (cached) {
                 cached = JSON.parse(cached);
                 if (serverRunDate < new Date(cached.cDate)) {
-                    registerRemoteFunctions(cached, false); // will register functions from cached manifest
+                    if (handshakeData) {
+                        rpcMaster.emit('authenticate', {name: name, handshake: handshakeData});
+                        channel.cached = cached;
+                    } else {
+                        registerRemoteFunctions(cached, false); // will register functions from cached manifest
+                    }
                 } else {
                     //cache has been invalidated
                     delete localStorage[cacheKey];
@@ -103,11 +77,11 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
     };
 
     var registerRemoteFunctions = function (data, storeInCache) {
-        var channelObj = serverChannels[data.name];
+        var channel = serverChannels[data.name];
         data.fnNames.forEach(function (fnName) {
-            channelObj[fnName] = function () {
+            channel[fnName] = function () {
                 invocationCounter++;
-                channelObj._socket.emit('call',
+                channel._socket.emit('call',
                     {Id: invocationCounter, fnName: fnName, args: Array.prototype.slice.call(arguments, 0)}
                 );
                 if (invocationCounter == 1) {
@@ -119,7 +93,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
             };
         });
 
-        channelObj._loadDef.resolve(channelObj);
+        channel._loadDef.resolve(channel);
         if (storeInCache !== false) {
             $rootScope.$apply();
             data.cDate = new Date();    // here we make a note of when the channel cache was saved
@@ -128,23 +102,56 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 
     };
 
+    var connectToServerChannel = function (data) {
+        var channel = serverChannels[data.name];
+        var name = data.name;
+        channel._socket = io.connect(baseURL + '/rpc-' + name)
+            .on('return', function (data) {
+                deferreds[data.Id].resolve(data.value);
+                callEnded(data.Id);
+            })
+            .on('error', function (data) {
+                if (data && data.Id) {
+                    deferreds[data.Id].reject(data.reason);
+                    callEnded(data.Id);
+                } else {
+                    console.error("Unknown error occured on RPC socket connection");
+                }
+            })
+            .on('connect_failed', function (reason) {
+                console.error('unable to connect to namespace ', reason);
+                channel._loadDef.reject(reason);
+            })
+            .on('disconnect', function (data) {
+                delete serverChannels[name];
+                console.warn("Server channel " + name + " disconnected.");
+            });
+    };
+
     /**
-     * connects to remote server which exposes RPC calls
-     * @param {String} url to connect to, for example http://localhost:8080
-     * @param {Object} handshake for global authorization
+     * @param {String} url
      */
-    var connect = function (url, handshake) {
+    var connect = function (url) {
         if (!rpcMaster && url) {
             baseURL = url;
-            rpcMaster = io.connect(url + '/rpc-master', handshake)
+            rpcMaster = io.connect(url + '/rpc-master')
                 .on('serverRunDate', function (runDate) {
                     serverRunDateDeferred.resolve(runDate);
                     $rootScope.$apply();
                 })
-                .on('channelFns', registerRemoteFunctions)
+                .on('authenticated', function (data) {
+                    var channel = serverChannels[data.name];
+                    connectToServerChannel(data);
+                    registerRemoteFunctions(channel.cached, false); // will register functions from cached manifest
+                })
+                .on('channelFns', function (data, storeInCache) {
+                    connectToServerChannel(data);
+                    registerRemoteFunctions(data, storeInCache);
+                })
                 .on('channelDoesNotExist', function (data) {
-                    var channelObj = serverChannels[data.name];
-                    channelObj._loadDef.reject();
+
+                    var channel = serverChannels[data.name];
+                    channel._loadDef.reject();
                     console.warn("no channel under name: " + data.name);
                     $rootScope.$apply();
 
@@ -153,14 +160,19 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 
                     var channel = clientChannels[name];
                     var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.socket.sessionid);  //rpcC stands for rpc Client
-                    channel.socket = socket;
+                    channel._socket = socket;
                     socket.on('call', function (data) {
                         var exposed = channel.fns;
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
 
                             var retVal = exposed[data.fnName].apply(this, data.args);
                             $q.when(retVal).then(function (retVal) {
-                                socket.emit('return', { Id: data.Id, value: retVal });
+								if (retVal instanceof Error) {
+									// when synchronously returned Error
+									socket.emit('error', { Id: data.Id, reason: retVal });
+								} else {
+									socket.emit('return', { Id: data.Id, value: retVal });
+								}
                             }, function (error) {
                                 socket.emit('error', { Id: data.Id, reason: error });
                             });
@@ -232,6 +244,9 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
             var fnNames = [];
             for(var fn in toExpose)
             {
+				if (fn === '_socket') {
+					throw new Error('Failed to expose channel, _socket property is reserved for socket namespace');
+				}
                 fnNames.push(fn);
             }
 
@@ -239,26 +254,50 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
             return channel.deferred.promise;
         }
     };
-    rpc.onBatchStarts = function () {};
-    rpc.onBatchEnd = function () {};
-    rpc.onCall = function () {};
-    rpc.onEnd = function () {};
+    var nop = angular.noop;
+	//These are internal callbacks of socket.io-rpc, use them if you want to implement something like a global loader indicator
+    rpc.onBatchStarts = nop;	//called when invocation counter equals 1
+    rpc.onBatchEnd = nop;		//called when invocation counter equals endCounter
+    rpc.onCall = nop;			//called when invocation counter equals endCounter
+    rpc.onEnd = nop;			//called when one call is returned
+    rpc.auth = {};
     return rpc;
 }).directive('rpcController', function ($controller, $q, $rpc) {
     return {
-        scope: true,
-        link: function (scope, elm, attr) {
-            var ctrlName = attr.rpcController;
-            var promise = $rpc.loadChannel(attr.rpcChannel);
-            promise.then(function (channel) {
-                scope.rpc = channel;
-                var ctrl = $controller(ctrlName, {
-                    $scope: scope
-                });
-                elm.children().data('$ngControllerController', ctrl);
-            }, function (err) {
-                console.error("Cannot instantiate rpc-controller - channel failed to load");
-            });
-        }
-    };
+		scope: true,
+		compile: function compile(tEl, tAttrs) {
+			return {
+				pre: function (scope, iElement, attr, controller) {
+					var ctrlName = attr.rpcController;
+                    var instantiate = function (promise) {
+                        promise.then(function (channel) {
+                            scope.rpc = channel;
+                            var ctrl = $controller(ctrlName, {
+                                $scope: scope
+                            });
+                            iElement.children().data('$ngControllerController', ctrl);
+                        }, function (err) {
+                            console.error("Cannot instantiate rpc-controller - channel failed to load");
+                        });
+                    };
+                    if (attr.rpcAuth) {
+						var authGetter = $rpc.auth[attr.rpcAuth];
+						if (typeof authGetter !== 'function') {
+							throw new Error('no auth getter function found under ' + attr.rpcAuth);
+						}
+                        $q.when(authGetter()).then(function (handshake) {
+
+                            var promise = $rpc.loadChannel(attr.rpcChannel, handshake);
+                            instantiate(promise);
+                        });
+					} else {
+                        var promise = $rpc.loadChannel(attr.rpcChannel);
+                        instantiate(promise);
+                    }
+
+                }
+			};
+		}
+	}
+
 });

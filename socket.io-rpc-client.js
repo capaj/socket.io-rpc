@@ -1,5 +1,6 @@
 // RPC client
 var RPC = (function (rpc) {
+    var noop = function(){};
     var invocationCounter = 0;
     var endCounter = 0;
     var serverChannels = {};
@@ -12,10 +13,12 @@ var RPC = (function (rpc) {
     serverRunDateDeferred.promise.then(function (date) {
         serverRunDate = new Date(date);
     });
-    rpc.onBatchStarts = function () {};
-    rpc.onBatchEnd = function () {};
-    rpc.onCall = function () {};
-    rpc.onEnd = function () {};
+	//These are internal callbacks of socket.io-rpc, use them if you want to implement something like a global loader indicator
+    rpc.onBatchStarts = noop;	//called when invocation counter equals 1
+    rpc.onBatchEnd = noop;		//called when invocation counter equals endCounter
+    rpc.onCall = noop;			//called when invocation counter equals endCounter
+    rpc.onEnd = noop;			//called when one call is returned
+
     var callEnded = function (Id) {
         if (deferreds[Id]) {
             delete deferreds[Id];
@@ -55,34 +58,18 @@ var RPC = (function (rpc) {
         var channel = serverChannels[name];
         channel._loadDef = deferred;
         serverRunDateDeferred.promise.then(function () {
-            channel._socket = io.connect(baseURL + '/rpc-' + name, handshakeData)
-                .on('return', function (data) {
-                    deferreds[data.Id].resolve(data.value);
-                    callEnded(data.Id);
-                })
-                .on('error', function (data) {
-                    if (data && data.Id) {
-                        deferreds[data.Id].reject(data.reason);
-                        callEnded(data.Id);
-                    } else {
-                        console.error("Unknown error occured on RPC socket connection");
-                    }
-                })
-                .on('connect_failed', function (reason) {
-                    console.error('unable to connect to namespace ', reason);
-                    channel._loadDef.reject(reason);
-                })
-                .on('disconnect', function (data) {
-                    delete serverChannels[name];
-                    console.warn("Server channel " + name + " disconnected.");
-                });
 
             var cacheKey = getCacheKey(name);
             var cached = localStorage[cacheKey];
             if (cached) {
                 cached = JSON.parse(cached);
                 if (serverRunDate < new Date(cached.cDate)) {
-                    registerRemoteFunctions(cached, false); // will register functions from cached manifest
+					if (handshakeData) {
+						rpcMaster.emit('authenticate', {name: name, handshake: handshakeData});
+						channel.cached = cached;
+					} else {
+						registerRemoteFunctions(cached, false); // will register functions from cached manifest
+					}
                 } else {
                     //cache has been invalidated
                     delete localStorage[cacheKey];
@@ -97,11 +84,12 @@ var RPC = (function (rpc) {
     };
 
     var registerRemoteFunctions = function (data, storeInCache) {
-        var channelObj = serverChannels[data.name];
-        data.fnNames.forEach(function (fnName) {
-            channelObj[fnName] = function () {
+		var channel = serverChannels[data.name];
+
+		data.fnNames.forEach(function (fnName) {
+            channel[fnName] = function () {
                 invocationCounter++;
-                channelObj._socket.emit('call',
+                channel._socket.emit('call',
                     {Id: invocationCounter, fnName: fnName, args: Array.prototype.slice.call(arguments, 0)}
                 );
                 if (invocationCounter == 1) {
@@ -113,50 +101,87 @@ var RPC = (function (rpc) {
             };
         });
 
-        channelObj._loadDef.resolve(channelObj);
+        channel._loadDef.resolve(channel);
         if (storeInCache !== false) {
             data.cDate = new Date();    // here we make a note of when the channel cache was saved
             cacheIt(getCacheKey(data.name), data)
         }
     };
 
+	var connectToServerChannel = function (data) {
+		var channel = serverChannels[data.name];
+		var name = data.name;
+		channel._socket = io.connect(baseURL + '/rpc-' + name)
+			.on('return', function (data) {
+				deferreds[data.Id].resolve(data.value);
+				callEnded(data.Id);
+			})
+			.on('error', function (data) {
+				if (data && data.Id) {
+					deferreds[data.Id].reject(data.reason);
+					callEnded(data.Id);
+				} else {
+					console.error("Unknown error occured on RPC socket connection");
+				}
+			})
+			.on('connect_failed', function (reason) {
+				console.error('unable to connect to namespace ', reason);
+				channel._loadDef.reject(reason);
+			})
+			.on('disconnect', function (data) {
+				delete serverChannels[name];
+				console.warn("Server channel " + name + " disconnected.");
+			});
+	};
+
     /**
-     * connects to remote server which exposes RPC calls
-     * @param {String} url to connect to, for example http://localhost:8080
-     * @param {Object} handshake for global authorization
+     * @param {String} url
      */
-    var connect = function (url, handshake) {
+    var connect = function (url) {
         if (!rpcMaster && url) {
             baseURL = url;
-            rpcMaster = io.connect(url + '/rpc-master', handshake)
+            rpcMaster = io.connect(url + '/rpc-master')
                 .on('serverRunDate', function (runDate) {
                     serverRunDateDeferred.resolve(runDate);
                 })
-                .on('channelFns', registerRemoteFunctions)
+				.on('authenticated', function (data) {
+					var channel = serverChannels[data.name];
+					connectToServerChannel(data);
+					registerRemoteFunctions(channel.cached, false); // will register functions from cached manifest
+				})
+                .on('channelFns', function (data, storeInCache) {
+					connectToServerChannel(data);
+					registerRemoteFunctions(data, storeInCache);
+				})
                 .on('channelDoesNotExist', function (data) {
-                    var channelObj = serverChannels[data.name];
-                    channelObj._loadDef.reject();
+                    var channel = serverChannels[data.name];
+                    channel._loadDef.reject();
                     console.warn("no channel under name: " + data.name);
                 })
                 .on('client channel created', function (name) {
                     var channel = clientChannels[name];
                     var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.socket.sessionid);  //rpcC stands for rpc Client
-                    channel.socket = socket;
+                    channel._socket = socket;
                     socket.on('call', function (data) {
                         var exposed = channel.fns;
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
                             var retVal = exposed[data.fnName].apply(this, data.args);
 
-                                if (when.isPromiseLike(retVal)) {    // this is async function, so we will emit 'return' after it finishes
-                                    //promise must be returned in order to be treated as async
-                                    retVal.then(function (asyncRetVal) {
-                                        socket.emit('return', { Id: data.Id, value: asyncRetVal });
-                                    }, function (error) {
-                                        socket.emit('error', { Id: data.Id, reason: error });
-                                    });
-                                } else {
-                                    socket.emit('return', { Id: data.Id, value: retVal });
-                                }
+                            if (when.isPromiseLike(retVal)) {
+                                //async - promise must be returned in order to be treated as async
+                                retVal.then(function (asyncRetVal) {
+                                    socket.emit('return', { Id: data.Id, value: asyncRetVal });
+                                }, function (error) {
+                                    socket.emit('error', { Id: data.Id, reason: error });
+                                });
+                            } else {
+								//synchronous
+								if (retVal instanceof Error) {
+									socket.emit('error', { Id: data.Id, reason: retVal });
+								} else {
+									socket.emit('return', { Id: data.Id, value: retVal });
+								}
+                            }
 
                         } else {
                             socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
@@ -212,7 +237,7 @@ var RPC = (function (rpc) {
     /**
      * @param name {string}
      * @param toExpose {Object} object with functions as values
-     * @returns {Promise} when.js promise
+     * @returns {when.promise}
      */
     rpc.expose = function (name, toExpose) { //
         if (!clientChannels.hasOwnProperty(name)) {
@@ -224,7 +249,10 @@ var RPC = (function (rpc) {
         var fnNames = [];
         for(var fn in toExpose)
         {
-            fnNames.push(fn);
+			if (fn === '_socket') {
+				throw new Error('Failed to expose channel, _socket property is reserved for socket namespace');
+			}
+			fnNames.push(fn);
         }
 
         rpcMaster.emit('expose channel', {name: name, fns: fnNames});

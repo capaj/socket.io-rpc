@@ -35,8 +35,8 @@ var getFnNames = function (channelName) {
  *
  * @param {String} name
  * @param {Object} toExpose
- * @param [Function] authFn
- * @returns {*}
+ * @param {Function} [authFn] should return boolean value, if true access to a channel is allowed
+ * @returns {RpcChannel}
  * @constructor
  */
 var RpcChannel = function (name, toExpose, authFn) {      //
@@ -46,21 +46,26 @@ var RpcChannel = function (name, toExpose, authFn) {      //
     }
     this.authenticated = {};
     this._socket = io.of('/rpc-'+name);
-    var that = this;
+    var self = this;
     this._socket.on('connection', function (socket) {
         var invocationRes = function (data) {
             if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
-                var retVal = toExpose[data.fnName].apply(this, data.args);
+                var retVal = toExpose[data.fnName].apply(socket, data.args);
 
                 if (when.isPromiseLike(retVal)) {    // this is async function, so we will emit 'return' after it finishes
-                    //promise must be returned in order to be treated as async
+                    //async - promise as a return value indicates that method is async
                     retVal.then(function (asyncRetVal) {
                         socket.emit('return', { Id: data.Id, value: asyncRetVal });
                     }, function (error) {
                         socket.emit('error', { Id: data.Id, reason: error });
                     });
                 } else {
-                    socket.emit('return', { Id: data.Id, value: retVal });
+					//synchronous
+					if (retVal instanceof Error) {
+						socket.emit('error', { Id: data.Id, reason: retVal });
+					} else {
+						socket.emit('return', { Id: data.Id, value: retVal });
+					}
                 }
 
             } else {
@@ -68,11 +73,11 @@ var RpcChannel = function (name, toExpose, authFn) {      //
             }
         };
 
-        if (that.authFn) {
-            if (typeof that.authenticated[socket.id] !== "undefined") {
+        if (authFn) {
+            if (self.authenticated[socket.id]) {
                 socket.on('call', invocationRes);
                 socket.on('disconnect', function () {
-                    delete that.authenticated[socket.id];   // cleaning up
+                    delete self.authenticated[socket.id];   // cleaning up
                 });
             } else {
                 socket.emit('connect_failed', "Authentication for channel failed");
@@ -84,7 +89,6 @@ var RpcChannel = function (name, toExpose, authFn) {      //
 
     });
 
-//        serverChannels[channel] = ioChannel;
     return this;
 };
 
@@ -99,7 +103,7 @@ var callToClientEnded = function (Id) {
             endCounter = 0;
         }
     } else {
-        console.error("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
+        console.warn("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
     }
 };
 
@@ -116,37 +120,62 @@ module.exports = {
                 res.sendfile('node_modules/when/when.js');
             });
         }
-        io = ioP;
-        return io
-            .of('/rpc-master')
+		io = ioP;
+
+		io.sockets.on('connection', function (socket) {
+			socket.on('disconnect', function() {
+				delete clientChannels[socket.id];
+			});
+		});
+
+		var authProcess = function (data, callback, socket) {
+			if (serverChannels.hasOwnProperty(data.name)) {
+				var authFn = serverChannels[data.name].authFn;
+				if (typeof authFn === 'function') { // check whether this is private channel
+					serverChannels[data.name].authFn.call(socket, data.handshake, callback);
+				} else {
+					callback(true);
+				}
+			} else {
+				socket.emit('channelDoesNotExist', {name: data.name});
+			}
+		};
+
+        return io.of('/rpc-master')
             .on('connection', function (socket) {
-                socket.on('load channel', function (data) {
-                    if (serverChannels.hasOwnProperty(data.name)) {
-                        var callback = function (authorized) {
-                            if (authorized) {
-                                serverChannels[data.name].authenticated[socket.id] = null;  // we don't need any value here, existence of the ID in this object means that client is authorized
-                                if (data.cachedDate && data.cachedDate > runDate) {
-                                    socket.emit('channelFns', {name: data.name, upToDate: true});
-                                } else {
-                                    socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
-                                }
-                            } else {
-                                socket.emit('AuthorizationFailed', data.name);
-                            }
-                        };
-                        var authFn = serverChannels[data.name].authFn;
-                        if (typeof authFn === 'function') { // check whether this is private channel
-                            serverChannels[data.name].authFn(data.handshake, callback);
-                        } else {
-                            callback(true);
-                        }
-                    } else {
-                        socket.emit('channelDoesNotExist', {name: data.name});
-                    }
+				socket.on('authenticate', function (data) {	//gets called everytime even when functions are cached
+					var callback = function (authorized) {
+						if (authorized) {
+							serverChannels[data.name].authenticated[socket.id] = true;  // we don't need any value here, existence of the ID in this object means that client is authorized
+							socket.emit('authenticated', {name: data.name});
+						} else {
+							socket.emit('AuthorizationFailed', data.name);
+						}
+					};
+					authProcess(data, callback, socket);
+
+				});
+
+				socket.on('load channel', function (data) {
+					var callback = function (authorized) {
+						if (authorized) {
+							serverChannels[data.name].authenticated[socket.id] = true;  // we don't need any value here, existence of the ID in this object means that client is authorized
+							if (data.cachedDate && data.cachedDate > runDate) {
+								socket.emit('channelFns', {name: data.name, upToDate: true});
+							} else {
+								socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+							}
+						} else {
+							socket.emit('AuthorizationFailed', data.name);
+						}
+					};
+					authProcess(data, callback, socket);
                 });
+
                 socket.on('load channelList', function () {
                     socket.emit('channels', { list: getChannelNames() });
                 });
+
                 socket.on('expose channel', function (data) {   // client wants to expose a channel
                     console.log("client with ID" + socket.id +" exposed rpc channel " + data.name);
                     var channel = getClientChannel(socket.id, data.name);
@@ -165,18 +194,21 @@ module.exports = {
                         };
                     });
                     channel.socket.on('connection', function (socket) {
-                        socket.on('return', function (data) {
-                            deferreds[data.Id].resolve(data.value);
-                            callToClientEnded(data.Id);
-                        });
-                        socket.on('error', function (data) {
-                            deferreds[data.Id].reject(data.reason);
-                            callToClientEnded(data.Id);
-                        });
+                        if (channel.clDef) {
+                            socket.on('return', function (data) {
+                                deferreds[data.Id].resolve(data.value);
+                                callToClientEnded(data.Id);
+                            });
+                            socket.on('error', function (data) {
+                                deferreds[data.Id].reject(data.reason);
+                                callToClientEnded(data.Id);
+                            });
 
-                        console.log("client connected to its own rpc channel " + data.name);
-                        channel.onConnection && channel.onConnection(socket, channel.fns);
-//                        channel.deferred.resolve(channel);
+                            console.log("client connected to its own rpc channel " + data.name);
+
+                            channel.clDef.resolve(channel.fns);
+
+                        }
                     });
 
                     socket.emit('client channel created', data.name);
@@ -191,21 +223,45 @@ module.exports = {
      *  Makes a channel available for clients
      * @param {String} name
      * @param {Object} toExpose
-     * @param [auth] when provided, channel will require authentication
+     * @param {Function} [authFn] when provided, channel will require authentication
+	 * @returns {SocketNamespace}
      */
     expose: function (name, toExpose, authFn) {
         if (serverChannels[name]) {
-            console.warn("This channel name(" + name + ") is already taken-ignoring the command.");
+            console.warn("This channel name(" + name + ") is already exposed-ignoring the command.");
+			return serverChannels[name]._socket;
         } else {
             var channel = new RpcChannel(name, toExpose, authFn);
-            serverChannels[name] = channel;
-        }
+			if (toExpose._socket) {
+				throw new Error('Failed to expose channel, _socket property is reserved for socket namespace');
+			}
+			serverChannels[name] = channel;
+			return channel._socket;
+		}
     },
-    loadClientChannel: function (socket, name, callback) {
+    /**
+     *
+     * @param socket
+     * @param name
+     * @returns {Promise}
+     */
+    loadClientChannel: function (socket, name) {
         var channel = getClientChannel(socket.id, name);
-        channel.onConnection = callback;
-        socket.on('disconnect', function () {
-            delete clientChannels[socket.id];
-        });
+        /**
+         * @type {Promise}
+         */
+        if (!channel.clDef) {
+            channel.clDef = when.defer();
+
+            socket.on('disconnect', function onDisconnect() {
+                var err = function () {
+                    throw new Error('Client channel disconnected, this channel is not available anymore')
+                };
+                for (var method in channel.fns) {
+                    channel.fns[method] = err;	// references to client channel might be hold in client code, so we need to invalidate them
+                }
+            });
+        }
+        return channel.clDef.promise;
     }
 };
