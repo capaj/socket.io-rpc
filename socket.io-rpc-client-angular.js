@@ -171,7 +171,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                             $q.when(retVal).then(function (retVal) {
 								if (retVal instanceof Error) {
 									// when synchronously returned Error
-									socket.emit('error', { Id: data.Id, reason: retVal });
+									socket.emit('error', { Id: data.Id, reason: retVal.toString() });
 								} else {
 									socket.emit('return', { Id: data.Id, value: retVal });
 								}

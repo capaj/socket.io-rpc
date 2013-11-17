@@ -179,7 +179,7 @@ var RPC = (function (rpc) {
                             } else {
 								//synchronous
 								if (retVal instanceof Error) {
-									socket.emit('error', { Id: data.Id, reason: retVal });
+									socket.emit('error', { Id: data.Id, reason: retVal.toString() });
 								} else {
 									socket.emit('return', { Id: data.Id, value: retVal });
 								}
