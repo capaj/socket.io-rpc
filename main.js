@@ -179,7 +179,7 @@ module.exports = {
                 socket.on('expose channel', function (data) {   // client wants to expose a channel
                     console.log("client with ID" + socket.id +" exposed rpc channel " + data.name);
                     var channel = getClientChannel(socket.id, data.name);
-
+                    channel.dfd = channel.dfd || when.defer();
 //                    channel.deferred = channel.deferred || when.defer();
                     channel.fns = channel.fns || {};
                     channel.socket = io.of('/rpcC-'+data.name + '/' + socket.id);  //rpcC stands for rpc Client
@@ -194,21 +194,21 @@ module.exports = {
                         };
                     });
                     channel.socket.on('connection', function (socket) {
-                        if (channel.clDef) {
-                            socket.on('return', function (data) {
-                                deferreds[data.Id].resolve(data.value);
-                                callToClientEnded(data.Id);
-                            });
-                            socket.on('error', function (data) {
-                                deferreds[data.Id].reject(data.reason);
-                                callToClientEnded(data.Id);
-                            });
 
-                            console.log("client connected to its own rpc channel " + data.name);
+                        socket.on('return', function (data) {
+                            deferreds[data.Id].resolve(data.value);
+                            callToClientEnded(data.Id);
+                        });
+                        socket.on('error', function (data) {
+                            deferreds[data.Id].reject(data.reason);
+                            callToClientEnded(data.Id);
+                        });
 
-                            channel.clDef.resolve(channel.fns);
+                        console.log("client connected to its own rpc channel " + data.name);
 
-                        }
+                        channel.dfd.resolve(channel.fns);
+
+
                     });
 
                     socket.emit('client channel created', data.name);
@@ -250,8 +250,8 @@ module.exports = {
         /**
          * @type {Promise}
          */
-        if (!channel.clDef) {
-            channel.clDef = when.defer();
+        if (!channel.dfd) {
+            channel.dfd = when.defer();
 
             socket.on('disconnect', function onDisconnect() {
                 var err = function () {
@@ -262,6 +262,6 @@ module.exports = {
                 }
             });
         }
-        return channel.clDef.promise;
+        return channel.dfd.promise;
     }
 };
