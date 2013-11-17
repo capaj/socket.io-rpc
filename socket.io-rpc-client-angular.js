@@ -61,6 +61,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                         rpcMaster.emit('authenticate', {name: name, handshake: handshakeData});
                         channel.cached = cached;
                     } else {
+                        connectToServerChannel(channel, name);
                         registerRemoteFunctions(cached, false); // will register functions from cached manifest
                     }
                 } else {
@@ -102,9 +103,13 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 
     };
 
-    var connectToServerChannel = function (data) {
-        var channel = serverChannels[data.name];
-        var name = data.name;
+    /**
+     *
+     * @param {Object} channel
+     * @param {String} name
+     */
+    var connectToServerChannel = function (channel, name) {
+
         channel._socket = io.connect(baseURL + '/rpc-' + name)
             .on('return', function (data) {
                 deferreds[data.Id].resolve(data.value);
@@ -142,12 +147,15 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                     $rootScope.$apply();
                 })
                 .on('authenticated', function (data) {
-                    var channel = serverChannels[data.name];
-                    connectToServerChannel(data);
+                    var name = data.name;
+                    var channel = serverChannels[name];
+                    connectToServerChannel(channel, name);
                     registerRemoteFunctions(channel.cached, false); // will register functions from cached manifest
                 })
                 .on('channelFns', function (data, storeInCache) {
-                    connectToServerChannel(data);
+                    var name = data.name;
+                    var channel = serverChannels[name];
+                    connectToServerChannel(channel, name);
                     registerRemoteFunctions(data, storeInCache);
                 })
                 .on('channelDoesNotExist', function (data) {

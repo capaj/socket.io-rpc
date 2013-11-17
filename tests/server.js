@@ -2,7 +2,7 @@ var express = require('express');
 
 var app = module.exports = express();
 app.configure(function(){
-    app.set('port', 8080);
+    app.set('port', 8081);
     app.use(express.favicon());
     app.use(express.bodyParser());
     app.use(express.methodOverride());

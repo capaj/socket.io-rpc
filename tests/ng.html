@@ -42,7 +42,7 @@
             );
         }
     ).run(function ($rpc, $rootScope) {
-            $rpc.connect('http://localhost:8080');   // don't forget port, if you are not on 80
+            $rpc.connect('http://localhost:8081');   // don't forget port, if you are not on 80
             $rpc.auth.local = function () {
                 return {passw: '123'};
             };
