@@ -57,7 +57,11 @@ var RpcChannel = function (name, toExpose, authFn) {      //
                     retVal.then(function (asyncRetVal) {
                         socket.emit('return', { Id: data.Id, value: asyncRetVal });
                     }, function (error) {
-                        socket.emit('error', { Id: data.Id, reason: error });
+						if (error instanceof Error) {
+							error = error.toString();
+						}
+						socket.emit('error', { Id: data.Id, reason: error });
+
                     });
                 } else {
 					//synchronous

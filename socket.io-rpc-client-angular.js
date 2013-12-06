@@ -184,7 +184,10 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 									socket.emit('return', { Id: data.Id, value: retVal });
 								}
                             }, function (error) {
-                                socket.emit('error', { Id: data.Id, reason: error });
+								if (error instanceof Error) {
+									error = error.toString();
+								}
+								socket.emit('error', { Id: data.Id, reason: error });
                             });
 
                         } else {
