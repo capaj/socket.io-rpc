@@ -34,8 +34,11 @@
             channel._socket.on('disconnect', function () {
                 console.log("channel disconnected!");
             });
-        }
-    );
+
+            //channel.nonExistentRemoteFn();  // uncomment for typerror to be thrown and handled by otherwise promise method
+        }).otherwise(function (err) {
+                console.log(err + ' equals TypeError: Object #<Object> has no method nonExistentRemoteFn');
+            });
     RPC.expose('clientChannel', {
         fnOnClient: function (param) {
             return 'whatever you need from client returned ' + param;
