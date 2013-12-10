@@ -170,3 +170,7 @@ There are 4 internal callbacks, which might help you in case you need to be noti
         }
     );
 
+
+#TODO
+1. switch to bluebird instead of when.js
+2. switch to primus instead of socket.io
