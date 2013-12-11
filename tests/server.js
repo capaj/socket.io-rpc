@@ -21,7 +21,6 @@ app.get('/rpc/rpc-client-angular.js', function (req, res) {  // this is not norm
 var when = require('when');
 var rpc = require('../main.js');
 var io = require('socket.io').listen(server);
-io.set('transports', [ 'websocket']);
 
 rpc.createServer(io, app);
 rpc.expose('myChannel', {
