@@ -143,6 +143,7 @@ var RPC = (function (rpc) {
      * connects to remote server which exposes RPC calls
      * @param {String} url to connect to, for example http://localhost:8080
      * @param {Object} handshake for global authorization
+     * returns {Socket} master socket
      */
     var connect = function (url, handshake) {
         if (!rpcMaster && url) {
@@ -202,7 +203,7 @@ var RPC = (function (rpc) {
                     });
                     channel.deferred.resolve(channel);
                 });
-
+            return rpcMaster;
         } else {
             console.warn("ignoring connect command, either url of master null or already connected");
         }
