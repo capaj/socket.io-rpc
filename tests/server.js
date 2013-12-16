@@ -18,7 +18,7 @@ app.get('/rpc/rpc-client-angular.js', function (req, res) {  // this is not norm
     res.sendfile('./socket.io-rpc-client-angular.js');
 });
 
-var when = require('when');
+var Promise = require('bluebird');
 var rpc = require('../main.js');
 var io = require('socket.io').listen(server);
 
@@ -31,7 +31,7 @@ rpc.expose('myChannel', {
     },
     //returns a promise, which when resolved will resolve promise on client-side with the result
     myAsyncTest: function (param) {
-        var deffered = when.defer();
+        var deffered = Promise.defer();
         setTimeout(function(){
             deffered.resolve("String generated asynchronously serverside with " + param);
         },1000);

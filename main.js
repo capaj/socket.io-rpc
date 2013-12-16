@@ -1,4 +1,4 @@
-var when = require('when');
+var Promise = require('bluebird');
 
 var runDate = new Date();
 var io;
@@ -45,15 +45,14 @@ var RpcChannel = function (name, toExpose, authFn) {      //
         this.authFn = authFn;
     }
     this.authenticated = {};
-    this._socket = io.of('/rpc-'+name);
+    this._socket = io.of('/rpc-' + name);
     var self = this;
     this._socket.on('connection', function (socket) {
         var invocationRes = function (data) {
             if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
                 var retVal = toExpose[data.fnName].apply(socket, data.args);
-
-                if (when.isPromiseLike(retVal)) {    // this is async function, so we will emit 'return' after it finishes
-                    //async - promise as a return value indicates that method is async
+                /* NOTE: Will return true for *any thenable object*, and isn't truly safe, since it will access the `then` property*/
+                if (retVal && typeof retVal.then === 'function') {    // this is async function, so 'return' is emitted after it finishes
                     retVal.then(function (asyncRetVal) {
                         socket.emit('return', { Id: data.Id, value: asyncRetVal });
                     }, function (error) {
@@ -120,7 +119,7 @@ module.exports = {
             app.get('/rpc/rpc-client-angular.js', function (req, res) {
                 res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client-angular.js');
             });
-            app.get('/rpc/when.js', function (req, res) {
+            app.get('/rpc/when.js', function (req, res) {   //used only for regular clients, angular client has it's own promise library
                 res.sendfile('node_modules/when/when.js');
             });
         }
@@ -183,7 +182,7 @@ module.exports = {
                 socket.on('expose channel', function (data) {   // client wants to expose a channel
                     console.log("client with ID" + socket.id +" exposed rpc channel " + data.name);
                     var channel = getClientChannel(socket.id, data.name);
-                    channel.dfd = channel.dfd || when.defer();
+                    channel.dfd = channel.dfd || Promise.defer();
 //                    channel.deferred = channel.deferred || when.defer();
                     channel.fns = channel.fns || {};
                     channel.socket = io.of('/rpcC-'+data.name + '/' + socket.id);  //rpcC stands for rpc Client
@@ -193,7 +192,7 @@ module.exports = {
                             channel.socket.emit('call',
                                 {Id: invocationCounter, fnName: fnName, args: Array.prototype.slice.call(arguments, 0)}
                             );
-                            deferreds[invocationCounter] = when.defer();
+                            deferreds[invocationCounter] = Promise.defer();
                             return deferreds[invocationCounter].promise;
                         };
                     });
@@ -225,7 +224,7 @@ module.exports = {
      *  Makes a channel available for clients
      * @param {String} name
      * @param {Object} toExpose
-     * @param {Function} [authFn] when provided, channel will require authentication
+     * @param {Function} [authFn] when provided, channel will call it on any new connected client
 	 * @returns {SocketNamespace}
      */
     expose: function (name, toExpose, authFn) {
@@ -253,7 +252,7 @@ module.exports = {
          * @type {Promise}
          */
         if (!channel.dfd) {
-            channel.dfd = when.defer();
+            channel.dfd = Promise.defer();
 
             socket.on('disconnect', function onDisconnect() {
                 var err = function () {

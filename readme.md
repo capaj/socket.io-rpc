@@ -5,12 +5,6 @@ It is a minimalistic remote procedure call(RPC/RMI) library bootstrapped on sock
 Angular.js lib contains special rpc-controller, which when compiled asynchronously loads server channel and instantiatel classic angular controller.
 Whole library is depending on promises. When calling over network, promise is always returned.
 
-
-## ChangeLog
-    0.0.8 -> 0.0.9 Switched from Q to when.js for better performance
-    0.1.3 -> 0.1.4 Added a directive to angularJS client to make instantiating a controller with rpc channel less of a chore
-    0.2.5 -> 0.3.0 Synchronous resolution of a call can be now also rejected without need to create and reject a promise by simply returning an instance of Error
-
 ## Browser support
     numbers are for standalone(but angular.js should be similar) client(author's guess):
     IE	FIREFOX	SAFARI	CHROME	OPERA	IPHONE	ANDROID
@@ -30,7 +24,8 @@ There are 4 internal callbacks, which might help you in case you need to be noti
 
 ###Serverside
     var io = require('socket.io').listen(server);
-    var when = require('when'); // you can use any other http://promises-aplus.github.io/promises-spec/ compliant library
+    // you should be able to use any other http://promises-aplus.github.io/promises-spec/ compliant library, but I would greatly recommend using bluebird
+    var Promise = require('bluebird');
     var rpc = require('socket.io-rpc');
     rpc.createServer(io, app);
     rpc.expose('myChannel', {
@@ -39,9 +34,9 @@ There are 4 internal callbacks, which might help you in case you need to be noti
             console.log('Client ID is: ' + this.id);
             return new Date();
         },
-        //returns a promise, which when resolved will resolve promise on client-side with the result
+        //returns a promise, which when resolved will resolve promise on client-side with the result(with the middle step in JSON over socket.io)
         myAsyncTest: function (param) {
-            var deffered = when.defer();
+            var deffered = Promise.defer();
             setTimeout(function(){
                 deffered.resolve("String generated asynchronously serverside with " + param);
             },1000);
@@ -70,7 +65,7 @@ There are 4 internal callbacks, which might help you in case you need to be noti
         };
         window.define.amd = {};
     </script>
-    <script src="/rpc/when.js"></script>    // for optimal performace download and use here minified version, use this for development or for non-performance critical scenarios
+    <script src="/rpc/when.js"></script>    // for optimal performance download and use here minified version, use this for development or for non-performance critical scenarios
     <script src="/rpc/rpc-client.js"></script>
     <script>
         RPC.connect('http://localhost:8080');
@@ -173,5 +168,4 @@ There are 4 internal callbacks, which might help you in case you need to be noti
 
 
 #TODO
-1. switch to bluebird instead of when.js
-2. switch to primus instead of socket.io
+1. switch to primus instead of socket.io
