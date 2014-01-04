@@ -6,7 +6,7 @@ Angular.js lib contains special rpc-controller, which when compiled asynchronous
 Whole library is depending on promises. When calling over network, promise is always returned.
 
 ## Browser support
-    numbers are for standalone(but angular.js should be similar) client(author's guess):
+    numbers are for both clients(vanilla and Angular):
     IE	FIREFOX	SAFARI	CHROME	OPERA	IPHONE	ANDROID
     8.0+	3.5+	4.0+	4.0+	10.5+	2.0+	2.0+
     note: ES5-shim is required in order for socket.io-rpc to work under non ES5 environments such as IE8
