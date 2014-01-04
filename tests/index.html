@@ -1,55 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>socket.io-rpc test</title>
-    <!--uncomment es5-shim for IE8 support-->
-    <!--<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/es5-shim/2.1.0/es5-shim.js"></script>-->
-
+    <title>socket.io-rpc test vanilla client</title>
 </head>
 <body>
     <h1>Plain browser socket.io-rpc test/showcase</h1>
     getTime: <span id="serverTime"></span><br>
     asyncTest: <span id="asyncText"></span>
-</body>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    //define shim taken from: https://github.com/cujojs/when
-    window.define = function(factory) {
-        try{ delete window.define; } catch(e){ window.define = void 0; } // IE
-        window.when = factory();
-    };
-    window.define.amd = {};
-</script>
-<script src="/rpc/when.js"></script>
-<script src="/rpc/rpc-client.js"></script>
-<script>
-    RPC.connect('http://localhost:8081');
-    RPC.loadChannel('myChannel', {passw: '123'}).then(
-        function (channel) {
-            channel.getTime().then(function (date) {
-                console.log('time on server is: ' + date);
-                document.getElementById('serverTime').innerText = date;
-            });
-            channel.myAsyncTest('passing string as argument').then(function(retVal){
-                console.log('server returned: ' + retVal);
-                document.getElementById('asyncText').innerText = retVal;
-            });
-            channel._socket.on('disconnect', function () {
-                console.log("channel disconnected!");
-            });
 
-            //channel.nonExistentRemoteFn();  // uncomment for typerror to be thrown and handled by otherwise promise method
-        }).otherwise(function (err) {
-                console.log(err + ' equals TypeError: Object #<Object> has no method nonExistentRemoteFn');
-            });
-    RPC.expose('clientChannel', {
-        fnOnClient: function (param) {
-            return 'whatever you need from client returned ' + param;
-        }
-    }).then(
-        function (channel) {
-            console.log(" client channel ready");
-        }
-    );
-</script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        //define shim taken from: https://github.com/cujojs/when
+        window.define = function(factory) {
+            try{ delete window.define; } catch(e){ window.define = void 0; } // IE
+            window.when = factory();
+        };
+        window.define.amd = {};
+    </script>
+    <script src="/rpc/when.js"></script>
+    <script src="/rpc/rpc-client.js"></script>
+    <script>
+        RPC.connect('http://localhost:8081');
+        RPC.loadChannel('myChannel', {passw: '123'}).then(
+                function (channel) {
+                    channel.getTime().then(function (date) {
+                        console.log('time on server is: ' + date);
+                        document.getElementById('serverTime').innerText = date;
+                    });
+                    channel.myAsyncTest('passing string as argument').then(function(retVal){
+                        console.log('server returned: ' + retVal);
+                        document.getElementById('asyncText').innerText = retVal;
+                    });
+                    channel._socket.on('disconnect', function () {
+                        console.log("channel disconnected!");
+                    });
+
+                    //channel.nonExistentRemoteFn();  // uncomment for typerror to be thrown and handled by otherwise promise method
+                }).otherwise(function (err) {
+                    console.log(err + ' equals TypeError: Object #<Object> has no method nonExistentRemoteFn');
+                });
+        RPC.expose('clientChannel', {
+            fnOnClient: function (param) {
+                return 'whatever you need from client returned ' + param;
+            }
+        }).then(
+                function (channel) {
+                    console.log(" client channel ready");
+                }
+        );
+    </script>
+</body>
+
 </html>

@@ -11,6 +11,13 @@ app.configure(function(){
 });
 var server = app.listen(app.get('port'));
 
+// this block is not normally needed, only we don't have these installed through NPM for tests, so paths differ
+app.get('/es5-shim.js', function (req, res) {
+    res.sendfile('./tests/es5-shim.js');
+});
+app.get('/angular.js', function (req, res) {
+    res.sendfile('./tests/angular.js');
+});
 app.get('/rpc/rpc-client.js', function (req, res) {  // this is not normally needed
     res.sendfile('./socket.io-rpc-client.js');
 });
@@ -57,6 +64,9 @@ io.sockets.on('connection', function (socket) {
 
 app.get('/ng', function (req, res) {
     res.sendfile('./tests/ng.html');
+});
+app.get('/ie8', function (req, res) {
+    res.sendfile('./tests/ie8.html');
 });
 app.get('*', function (req, res) {
     res.sendfile('./tests/index.html');
