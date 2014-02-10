@@ -11,12 +11,12 @@ Whole library is depending on promises. When calling over network, promise is al
     8.0+	3.5+	4.0+	4.0+	10.5+	2.0+	2.0+
     note: ES5-shim is required in order for socket.io-rpc to work under non ES5 environments such as IE8
 
-## Internal callbacks
+## Internal callbacks on client
 There are 4 internal callbacks, which might help you in case you need to be notified of a request beginning and ending:
 
     onBatchStarts   //called when invocation counter equals 1
     onBatchEnd      //called when invocation counter equals endCounter
-    onCall          //called when invocation counter equals endCounter
+    onCall          //called when one call is made to server
     onEnd           //called when one call is returned
 
 ## Usage example
