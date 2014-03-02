@@ -1,7 +1,9 @@
 # socket.io-rpc  [![NPM version](https://badge.fury.io/js/socket.io-rpc.png)](http://badge.fury.io/js/socket.io-rpc)
 
-Main purpose is to make it more easier to structure your code for browser-server realtime interaction.
-It is a minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and when.js. Has two client libraries-one for general use, other for AngularJS.
+Main purpose is to make it more easier to structure your code for browser-server realtime interaction, especially for
+async operations. With vanilla socket.io, you have to manually call your callbacks, socket.io-rpc automatically resolves
+a promise on other side, when returned promise is resolved.
+It is a minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and bluebird.js. Has two client libraries-one for general use, other for AngularJS.
 Angular.js lib contains special rpc-controller, which when compiled asynchronously loads server channel and instantiatel classic angular controller.
 Whole library is depending on promises. When calling over network, promise is always returned.
 
