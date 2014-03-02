@@ -6,6 +6,8 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
     var deferreds = [];
     var baseURL;
     var rpcMaster;
+    var knownTemplates = {};
+
     var serverRunDate;  // used for invalidating the cache
     var serverRunDateDeferred = $q.defer();
     serverRunDateDeferred.promise.then(function (date) {
@@ -79,7 +81,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 
     var registerRemoteFunctions = function (data, storeInCache) {
         var channel = serverChannels[data.name];
-        data.fnNames.forEach(function (fnName) {
+        var remoteMethodInvocation = function (fnName) {
             channel[fnName] = function () {
                 invocationCounter++;
                 channel._socket.emit('call',
@@ -92,7 +94,18 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                 deferreds[invocationCounter] = $q.defer();
                 return deferreds[invocationCounter].promise;
             };
-        });
+        };
+
+        if (data.fnNames) {
+            if (data.tplId) {
+                //store the template
+                knownTemplates[data.tplId] = data.fnNames;
+            }
+            data.fnNames.forEach(remoteMethodInvocation);   //initialize from incoming data
+        } else {
+            knownTemplates[data.tplId].forEach(remoteMethodInvocation); //this has to be initialized from known template
+        }
+
 
         channel._loadDef.resolve(channel);
         if (storeInCache !== false) {

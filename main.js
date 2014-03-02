@@ -1,7 +1,15 @@
 var Promise = require('bluebird');
+var _ = require('lodash');
 
 var runDate = new Date();
 var io;
+
+//channel template support vars
+var channelTemplates;
+var channelTemplatesSize;
+var clientKnownChannels = {};
+
+var options = { useChannelTemplates: true };        //object of options which is fed input on createServer method call
 var deferreds = [];
 var serverChannels = {};
 var clientChannels = {};
@@ -23,13 +31,6 @@ var getChannelNames = function () {
     return names;
 };
 
-var getFnNames = function (channelName) {
-    var names = [];
-    for(var fnName in serverChannels[channelName].fns){
-        names.push(fnName);
-    }
-    return names;
-};
 
 /**
  *
@@ -41,6 +42,37 @@ var getFnNames = function (channelName) {
  */
 var RpcChannel = function (name, toExpose, authFn) {      //
     this.fns = toExpose;
+
+    /**
+     * @type {Array<String>}
+     */
+    this.fnNames = [];
+
+    for (var fnName in toExpose) {
+        this.fnNames.push(fnName);
+    }
+    Object.freeze(toExpose);    //we won't support adding new methods to a channel after creation
+
+    if (options.useChannelTemplates) {
+        if (!channelTemplates) {    //the first channel
+            channelTemplates = {1: this.fnNames};
+            this.tplId = 1;
+            channelTemplatesSize = 1;
+        } else {
+            for (var tplId in channelTemplates) {
+                if (_.isEqual(channelTemplates[tplId], this.fnNames)) {
+                    this.tplId = tplId;
+                }
+            }
+            if (!_.isNumber(this.tplId)) {   //if no template matches the methods collection we save this channel methods as new template
+                var index = channelTemplatesSize + 1;
+                channelTemplates[index] = this.fnNames;
+                channelTemplatesSize = index;
+                this.tplId = index;
+            }
+        }
+
+    }
     if (authFn) {
         this.authFn = authFn;
     }
@@ -111,23 +143,31 @@ var callToClientEnded = function (Id) {
 };
 
 module.exports = {
-    createServer: function createMaster(ioP, app) {
-        if (app) {
-            app.get('/rpc/rpc-client.js', function (req, res) {
-                res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client.js');
-            });
-            app.get('/rpc/rpc-client-angular.js', function (req, res) {
-                res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client-angular.js');
-            });
-            app.get('/rpc/when.js', function (req, res) {   //used only for regular clients, angular client has it's own promise library
-                res.sendfile('node_modules/when/when.js');
-            });
+    createServer: function createMaster(ioP, opts) {
+
+        if (opts) {
+            var app = opts.expressApp;
+            if (app) {
+                app.get('/rpc/rpc-client.js', function (req, res) {
+                    res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client.js');
+                });
+                app.get('/rpc/rpc-client-angular.js', function (req, res) {
+                    res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client-angular.js');
+                });
+                app.get('/rpc/when.js', function (req, res) {   //used only for regular clients, angular client has it's own promise library
+                    res.sendfile('node_modules/when/when.js');
+                });
+            }
+
         }
 		io = ioP;
+        _.extend(options, opts);
 
 		io.sockets.on('connection', function (socket) {
-			socket.on('disconnect', function() {
-				delete clientChannels[socket.id];
+			clientKnownChannels[socket.id] = [];
+            socket.on('disconnect', function() {
+				delete clientChannels[socket.id];   //cleaning up in disconnect
+                delete clientKnownChannels[socket.id]; //cleaning up in disconnect
 			});
 		});
 
@@ -162,11 +202,23 @@ module.exports = {
 				socket.on('load channel', function (data) {
 					var callback = function (authorized) {
 						if (authorized) {
-							serverChannels[data.name].authenticated[socket.id] = true;  // we don't need any value here, existence of the ID in this object means that client is authorized
+                            var channel = serverChannels[data.name];
+                            channel.authenticated[socket.id] = true;  // we don't need any value here, existence of the ID in this object means that client is authorized
 							if (data.cachedDate && data.cachedDate > runDate) {
 								socket.emit('channelFns', {name: data.name, upToDate: true});
 							} else {
-								socket.emit('channelFns', {name: data.name, fnNames: getFnNames(data.name)});
+                                var channelFnPayload;
+                                if (options.useChannelTemplates) {
+                                    if (clientKnownChannels[socket.id].indexOf(channel.tplId) !== -1) {
+                                        channelFnPayload = {name: data.name, tplId: channel.tplId}; //channel template is known to the client
+                                    } else {
+                                        channelFnPayload = {name: data.name, fnNames: channel.fnNames, tplId: channel.tplId};
+                                        clientKnownChannels[socket.id].push(channel.tplId);
+                                    }
+                                } else {
+                                    channelFnPayload = {name: data.name, fnNames: channel.fnNames};
+                                }
+                                socket.emit('channelFns', channelFnPayload);
 							}
 						} else {
 							socket.emit('AuthorizationFailed', data.name);
