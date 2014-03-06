@@ -110,13 +110,13 @@ There are 4 internal callbacks, which might help you in case you need to be noti
     <script>
         angular.module('app', ['RPC'])
             .controller('testCtrl',
-            function ($scope, $rpc) {
-                $scope.rpc.getTime().then(function (date) {
+            function ($scope, $rpc, myChannel) {
+                myChannel.getTime().then(function (date) {
                     console.log('time on server is: ' + date);
                     $scope.serverTime = date;
                     //no need to call $scope.$apply, because it is called in $rpc;
                 });
-                $scope.rpc.myAsyncTest('passing string as argument').then(function (retVal) {
+                myChannel.myAsyncTest('passing string as argument').then(function (retVal) {
                     console.log('server returned: ' + retVal);
                     $scope.asyncTest = retVal;
                 });
@@ -168,4 +168,5 @@ There are 4 internal callbacks, which might help you in case you need to be noti
 
 
 #TODO
-1. switch to primus instead of socket.io
+1. Maybe switch to primus instead of socket.io?
+2. add Winston logging.
