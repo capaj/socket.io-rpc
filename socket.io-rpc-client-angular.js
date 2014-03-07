@@ -296,13 +296,17 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 		compile: function compile(tEl, tAttrs) {
 			return {
 				pre: function (scope, iElement, attr, controller) {
-					var ctrlName = attr.rpcController;
+                    if (!attr.rpcChannel) {
+                        throw new Error("No channel name defined on rpc-controller element: " + iElement[0].outerHTML);
+                    }
+                    var ctrlName = attr.rpcController;
                     var instantiate = function (promise) {
                         promise.then(function (channel) {
-                            scope.rpc = channel;
-                            var ctrl = $controller(ctrlName, {
+                            var localInj = {
                                 $scope: scope
-                            });
+                            };
+                            localInj[attr.rpcChannel] = channel;
+                            var ctrl = $controller(ctrlName, localInj);
                             iElement.children().data('$ngControllerController', ctrl);
                         }, function (err) {
                             console.error("Cannot instantiate rpc-controller - channel failed to load");

@@ -24,6 +24,10 @@ app.get('/rpc/rpc-client.js', function (req, res) {  // this is not normally nee
 app.get('/rpc/rpc-client-angular.js', function (req, res) {  // this is not normally needed
     res.sendfile('./socket.io-rpc-client-angular.js');
 });
+app.get('/rpc/when.js', function (req, res) {  // this is not normally needed
+    res.sendfile('./node_modules/when/when.js');
+});
+
 
 var Promise = require('bluebird');
 var rpc = require('../main.js');
