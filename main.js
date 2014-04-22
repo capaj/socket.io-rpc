@@ -5,8 +5,8 @@ var runDate = new Date();
 var io;
 
 //channel template support vars
-var channelTemplates;
-var channelTemplatesSize;
+var channelTemplates = {};
+var channelTemplatesSize = 0;
 var clientKnownChannels = {};
 
 var options = { useChannelTemplates: true };        //object of options which is fed input on createServer method call
@@ -54,22 +54,17 @@ var RpcChannel = function (name, toExpose, authFn) {      //
     Object.freeze(toExpose);    //we won't support adding new methods to a channel after creation
 
     if (options.useChannelTemplates) {
-        if (!channelTemplates) {    //the first channel
-            channelTemplates = {1: this.fnNames};
-            this.tplId = 1;
-            channelTemplatesSize = 1;
-        } else {
-            for (var tplId in channelTemplates) {
-                if (_.isEqual(channelTemplates[tplId], this.fnNames)) {
-                    this.tplId = tplId;
-                }
+
+        for (var tplId in channelTemplates) {
+            if (_.isEqual(channelTemplates[tplId], this.fnNames)) {
+                this.tplId = Number(tplId);   // converting string key to number
             }
-            if (!_.isNumber(this.tplId)) {   //if no template matches the methods collection we save this channel methods as new template
-                var index = channelTemplatesSize + 1;
-                channelTemplates[index] = this.fnNames;
-                channelTemplatesSize = index;
-                this.tplId = index;
-            }
+        }
+        if (!_.isNumber(this.tplId)) {   //if no template matches the methods collection we save this channel methods as new template
+            var index = channelTemplatesSize + 1;
+            channelTemplates[index] = this.fnNames;
+            channelTemplatesSize = index;
+            this.tplId = index;
         }
 
     }
@@ -88,19 +83,19 @@ var RpcChannel = function (name, toExpose, authFn) {      //
                     retVal.then(function (asyncRetVal) {
                         socket.emit('return', { Id: data.Id, value: asyncRetVal });
                     }, function (error) {
-						if (error instanceof Error) {
-							error = error.toString();
-						}
-						socket.emit('error', { Id: data.Id, reason: error });
+                        if (error instanceof Error) {
+                            error = error.toString();
+                        }
+                        socket.emit('error', { Id: data.Id, reason: error });
 
                     });
                 } else {
-					//synchronous
-					if (retVal instanceof Error) {
-						socket.emit('error', { Id: data.Id, reason: retVal.toString() });
-					} else {
-						socket.emit('return', { Id: data.Id, value: retVal });
-					}
+                    //synchronous
+                    if (retVal instanceof Error) {
+                        socket.emit('error', { Id: data.Id, reason: retVal.toString() });
+                    } else {
+                        socket.emit('return', { Id: data.Id, value: retVal });
+                    }
                 }
 
             } else {
