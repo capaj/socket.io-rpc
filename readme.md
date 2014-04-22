@@ -170,5 +170,5 @@ There are 4 internal callbacks, which might help you in case you need to be noti
 
 
 #TODO
-1. Maybe switch to primus instead of socket.io?
+1. Switch to raw websocket(ws) instead of scoket.io
 2. add Winston logging.
