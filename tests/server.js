@@ -33,7 +33,7 @@ var Promise = require('bluebird');
 var rpc = require('../main.js');
 var io = require('socket.io').listen(server);
 
-rpc.createServer(io, app);
+rpc.createServer(io, { useChannelTemplates: true, expressApp: app });
 rpc.expose('myChannel', {
     //plain JS function
     getTime: function () {

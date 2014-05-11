@@ -138,25 +138,35 @@ var callToClientEnded = function (Id) {
 };
 
 module.exports = {
+    /**
+     * @param {Manager} ioP socket.io manager instance returned by require('socket.io').listen(server);
+     * @param {Express|Object} [opts] either an object which will extend default options or express app
+     * @returns {Emitter|*}
+     */
     createServer: function createMaster(ioP, opts) {
 
         if (opts) {
-            var app = opts.expressApp;
-            if (app) {
+            var app = opts.expressApp || opts;
+            if (app.get) {
                 app.get('/rpc/rpc-client.js', function (req, res) {
-                    res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client.js');
+                    res.sendfile('./node_modules/socket.io-rpc/socket.io-rpc-client.js');
                 });
                 app.get('/rpc/rpc-client-angular.js', function (req, res) {
-                    res.sendfile('node_modules/socket.io-rpc/socket.io-rpc-client-angular.js');
+                    res.sendfile('./node_modules/socket.io-rpc/socket.io-rpc-client-angular.js');
                 });
                 app.get('/rpc/when.js', function (req, res) {   //used only for regular clients, angular client has it's own promise library
-                    res.sendfile('node_modules/when/when.js');
+                    res.sendfile('./node_modules/when/when.js');
                 });
+            } else {
+                console.warn('you should provide express app or an object with express app on property expressApp');
             }
-
+            if (!_.isFunction(opts)) {
+                _.extend(options, opts);
+            }
         }
+
 		io = ioP;
-        _.extend(options, opts);
+
 
 		io.sockets.on('connection', function (socket) {
 			clientKnownChannels[socket.id] = [];

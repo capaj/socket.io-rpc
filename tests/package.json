@@ -2,8 +2,7 @@
     "name": "socket.io-rpc-test-package",
     "private": true,
     "dependencies": {
-        "express": "latest",
-        "socket.io": "latest",
-        "when": "latest"
+        "express": "~3.5",
+        "socket.io": "0.9.16"
     }
 }
