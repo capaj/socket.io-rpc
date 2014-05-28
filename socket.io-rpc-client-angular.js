@@ -183,7 +183,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                 .on('client channel created', function (name) {
 
                     var channel = clientChannels[name];
-                    var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.socket.sessionid);  //rpcC stands for rpc Client
+                    var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.io.engine.id);  //rpcC stands for rpc Client
                     channel._socket = socket;
                     socket.on('call', function (data) {
                         var exposed = channel.fns;
@@ -278,7 +278,16 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                 fnNames.push(fn);
             }
 
-            rpcMaster.emit('expose channel', {name: name, fns: fnNames});
+            if (rpcMaster.disconnected) {
+                rpcMaster.on('connect', function () {
+                    setTimeout(function () {    //TODO investigate why this timeout is needed
+                        rpcMaster.emit('expose channel', {name: name, fns: fnNames});
+                    }, 100);
+                });
+            } else {
+                rpcMaster.emit('expose channel', {name: name, fns: fnNames});
+            }
+
             return channel.deferred.promise;
         }
     };

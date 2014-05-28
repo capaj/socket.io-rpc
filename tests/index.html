@@ -27,13 +27,14 @@
                         console.log('time on server is: ' + date);
                         document.getElementById('serverTime').innerText = date;
                     });
-                    channel.myAsyncTest('passing string as argument').then(function(retVal){
+                    channel.myAsyncTest('passing string as argument').then(function (retVal) {
                         console.log('server returned: ' + retVal);
                         document.getElementById('asyncText').innerText = retVal;
                     });
                     channel._socket.on('disconnect', function () {
                         console.log("channel disconnected!");
                     });
+
 
                     //channel.nonExistentRemoteFn();  // uncomment for typerror to be thrown and handled by otherwise promise method
                 }).otherwise(function (err) {
@@ -44,8 +45,10 @@
                 return 'whatever you need from client returned ' + param;
             }
         }).then(function (channel) {
-                console.log(" client channel ready");
-            }
+                    console.log(" client channel ready");
+                }, function (err) {
+                    debugger;
+                }
         );
     </script>
 </body>
