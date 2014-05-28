@@ -44,12 +44,12 @@
                     );
                 }
         ).run(function ($rpc, $rootScope) {
-                    $rpc.connect('http://localhost:8081');   // don't forget port, if you are not on 80
-                    $rpc.auth.local = function () {
-                        return {passw: '123'};
-                    };
-                    console.log('run ' + new Date().toJSON());
-                });
+			$rpc.connect('http://localhost:8081');   // don't forget port, if you are not on 80
+			$rpc.auth.local = function () {
+				return {passw: '123'};
+			};
+			console.log('run ' + new Date().toJSON());
+		});
 
         var injector = angular.bootstrap(document, ['app']);
 
