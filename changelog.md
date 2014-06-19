@@ -1,4 +1,6 @@
 ## ChangeLog
+    0.3.18 -> 0.3.19
+        Finally a proper version of socket.io, so I removed temporary hacks from client channels instantiation, updated express.js peerDependency to ~4
     0.3.12 -> 0.3.13
         channel is now injected into the controller, not put on scope as a property as before, be aware when updating
     0.3.9 -> 0.3.10
