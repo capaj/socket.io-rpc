@@ -10,4 +10,4 @@
     0.1.3 -> 0.1.4
         Added a directive to angularJS client to make instantiating a controller with rpc channel less of a chore
     0.0.8 -> 0.0.9
-          Switched from Q to when.js for better performance
+        Switched from Q to when.js for better performance
