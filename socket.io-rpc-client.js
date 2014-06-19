@@ -269,15 +269,7 @@ var RPC = (function (rpc) {
 			fnNames.push(fn);
         }
 
-        if (rpcMaster.disconnected) {
-            rpcMaster.on('connect', function () {
-                setTimeout(function () {    //TODO investigate why this timeout is needed
-                    rpcMaster.emit('expose channel', {name: name, fns: fnNames});
-                }, 100);
-            });
-        } else {
-            rpcMaster.emit('expose channel', {name: name, fns: fnNames});
-        }
+		rpcMaster.emit('expose channel', {name: name, fns: fnNames});
 
         return channel.deferred.promise;
     };

@@ -1,14 +1,10 @@
 var express = require('express');
 
 var app = module.exports = express();
-app.configure(function(){
-    app.set('port', 8081);
-    app.use(express.favicon());
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(app.router);
+app.use(require('morgan')('dev'));
 
-});
+app.set('port', 8081);
+
 var server = app.listen(app.get('port'));
 
 // this block is not normally needed, only we don't have these installed through NPM for tests, so paths differ
