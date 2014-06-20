@@ -27,7 +27,7 @@
     },
     "peerDependencies": {
         "express": "~4",
-        "socket.io": "1.0.5"
+        "socket.io": ">=1.0.5"
     },
     "license": "MIT"
 }

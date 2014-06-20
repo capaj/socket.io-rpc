@@ -4,6 +4,6 @@
   "dependencies": {
     "express": "~4",
     "morgan": "^1.1.1",
-    "socket.io": "1.0.5"
+    "socket.io": "1.0.6"
   }
 }
