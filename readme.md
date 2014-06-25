@@ -2,8 +2,10 @@
 
 It is a minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and bluebird.js.
 Main purpose is to make it more easier to structure your code for browser-server realtime interaction. Typical example is when you need to call a function on the server from client and get the return value from that function back to the client. With raw socket.io, you need to register few events and emit them at the righ moment. This can get complicated quite easily, especially for async operations. 
+
 With socket.io-rpc, you just expose a channel of functions and then call those as if they were regular async functions defined on your side, socket.io-rpc automatically resolves a promise on other side, when function returns or returned promise is resolved. It even propagates errors, so you have get error handling almost for free.
 In other words it promisifies socket.io network calls.
+
 
 Has two client libraries-one for general use, other for AngularJS.
 Angular.js lib contains special rpc-controller, which when compiled asynchronously loads server channel and instantiatel classic angular controller.
