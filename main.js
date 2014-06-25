@@ -81,25 +81,25 @@ var RpcChannel = function (name, toExpose, authFn) {      //
                 /* NOTE: Will return true for *any thenable object*, and isn't truly safe, since it will access the `then` property*/
                 if (retVal && typeof retVal.then === 'function') {    // this is async function, so 'return' is emitted after it finishes
                     retVal.then(function (asyncRetVal) {
-                        socket.emit('return', { Id: data.Id, value: asyncRetVal });
+                        socket.emit('resolve', { Id: data.Id, value: asyncRetVal });
                     }, function (error) {
                         if (error instanceof Error) {
                             error = error.toString();
                         }
-                        socket.emit('error', { Id: data.Id, reason: error });
+                        socket.emit('reject', { Id: data.Id, reason: error });
 
                     });
                 } else {
                     //synchronous
                     if (retVal instanceof Error) {
-                        socket.emit('error', { Id: data.Id, reason: retVal.toString() });
+                        socket.emit('reject', { Id: data.Id, reason: retVal.toString() });
                     } else {
-                        socket.emit('return', { Id: data.Id, value: retVal });
+                        socket.emit('resolve', { Id: data.Id, value: retVal });
                     }
                 }
 
             } else {
-                socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
+                socket.emit('reject', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
             }
         };
 
@@ -255,11 +255,11 @@ module.exports = {
                     });
                     channel.socket.on('connection', function (socket) {
 
-                        socket.on('return', function (data) {
+                        socket.on('resolve', function (data) {
                             deferreds[data.Id].resolve(data.value);
                             callToClientEnded(data.Id);
                         });
-                        socket.on('error', function (data) {
+                        socket.on('reject', function (data) {
                             deferreds[data.Id].reject(data.reason);
                             callToClientEnded(data.Id);
                         });

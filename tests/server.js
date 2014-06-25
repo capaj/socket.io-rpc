@@ -43,6 +43,13 @@ rpc.expose('myChannel', {
             deffered.resolve("String generated asynchronously serverside with " + param);
         },1000);
         return deffered.promise;
+    },
+    failingMethod: function () {
+        var deffered = Promise.defer();
+        setTimeout(function(){
+            deffered.reject(new Error("Sample error"));
+        },2000);
+        return deffered.promise;
     }
 //}, function (handshake, CB) {	//second parameter is optional for authenticated channels
 //	if (handshake.passw == '123') {

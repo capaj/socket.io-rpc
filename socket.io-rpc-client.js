@@ -117,16 +117,18 @@ var RPC = (function (rpc) {
 	var connectToServerChannel = function (channel, name) {
 
 		channel._socket = io.connect(baseURL + '/rpc-' + name)
-			.on('return', function (data) {
+			.on('resolve', function (data) {
 				deferreds[data.Id].resolve(data.value);
 				callEnded(data.Id);
 			})
-			.on('error', function (data) {
+			.on('reject', function (data) {
 				if (data && data.Id) {
 					deferreds[data.Id].reject(data.reason);
-					callEnded(data.Id);
+                    console.error("Call " + data.Id + " is rejected, reason ", data.reason);
+
+                    callEnded(data.Id);
 				} else {
-					console.error("Unknown error occured on RPC socket connection");
+					console.error("Unknown error occured on RPC socket connection, reason: ", data.reason);
 				}
 			})
 			.on('connect_failed', function (reason) {
@@ -181,24 +183,24 @@ var RPC = (function (rpc) {
                             if (when.isPromiseLike(retVal)) {
                                 //async - promise must be returned in order to be treated as async
                                 retVal.then(function (asyncRetVal) {
-                                    socket.emit('return', { Id: data.Id, value: asyncRetVal });
+                                    socket.emit('resolve', { Id: data.Id, value: asyncRetVal });
                                 }, function (error) {
 									if (error instanceof Error) {
 										error = error.toString();
 									}
-									socket.emit('error', { Id: data.Id, reason: error });
+									socket.emit('reject', { Id: data.Id, reason: error });
                                 });
                             } else {
 								//synchronous
 								if (retVal instanceof Error) {
-									socket.emit('error', { Id: data.Id, reason: retVal.toString() });
+									socket.emit('reject', { Id: data.Id, reason: retVal.toString() });
 								} else {
-									socket.emit('return', { Id: data.Id, value: retVal });
+									socket.emit('resolve', { Id: data.Id, value: retVal });
 								}
                             }
 
                         } else {
-                            socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
+                            socket.emit('reject', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
                         }
                     });
                     channel.deferred.resolve(channel);

@@ -1,6 +1,6 @@
 {
     "name": "socket.io-rpc",
-    "version": "0.3.20",
+    "version": "0.4.0",
     "private": false,
     "author": "capaj <capajj@gmail.com>",
     "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",

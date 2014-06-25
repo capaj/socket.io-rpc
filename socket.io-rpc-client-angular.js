@@ -1,4 +1,4 @@
-angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
+angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
     var invocationCounter = 0;
     var endCounter = 0;
     var serverChannels = {};
@@ -25,7 +25,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                 endCounter = 0;
             }
         }else {
-            console.warn("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
+            $log.warn("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
         }
     };
 
@@ -42,7 +42,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
         try{
             localStorage[key] = JSON.stringify(data);
         }catch(e){
-            console.warn("Error raised when writing to local storage: " + e); // probably quoata exceeded
+            $log.warn("Error raised when writing to local storage: " + e); // probably quoata exceeded
         }
     }
 
@@ -124,25 +124,27 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
     var connectToServerChannel = function (channel, name) {
 
         channel._socket = io.connect(baseURL + '/rpc-' + name)
-            .on('return', function (data) {
+            .on('resolve', function (data) {
                 deferreds[data.Id].resolve(data.value);
                 callEnded(data.Id);
             })
-            .on('error', function (data) {
+            .on('reject', function (data) {
                 if (data && data.Id) {
                     deferreds[data.Id].reject(data.reason);
+                    $log.error("Call " + data.Id + " is rejected, reason ", data.reason);
+
                     callEnded(data.Id);
                 } else {
-                    console.error("Unknown error occured on RPC socket connection");
+                    $log.error("Unknown error occured on RPC socket connection");
                 }
             })
             .on('connect_failed', function (reason) {
-                console.error('unable to connect to namespace ', reason);
+                $log.error('unable to connect to namespace ', reason);
                 channel._loadDef.reject(reason);
             })
             .on('disconnect', function (data) {
                 delete serverChannels[name];
-                console.warn("Server channel " + name + " disconnected.");
+                $log.warn("Server channel " + name + " disconnected.");
             });
     };
 
@@ -176,7 +178,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
 
                     var channel = serverChannels[data.name];
                     channel._loadDef.reject();
-                    console.warn("no channel under name: " + data.name);
+                    $log.warn("no channel under name: " + data.name);
                     $rootScope.$apply();
 
                 })
@@ -193,19 +195,19 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                             $q.when(retVal).then(function (retVal) {
 								if (retVal instanceof Error) {
 									// when synchronously returned Error
-									socket.emit('error', { Id: data.Id, reason: retVal.toString() });
+									socket.emit('reject', { Id: data.Id, reason: retVal.toString() });
 								} else {
-									socket.emit('return', { Id: data.Id, value: retVal });
+									socket.emit('resolve', { Id: data.Id, value: retVal });
 								}
                             }, function (error) {
 								if (error instanceof Error) {
 									error = error.toString();
 								}
-								socket.emit('error', { Id: data.Id, reason: error });
+								socket.emit('reject', { Id: data.Id, reason: error });
                             });
 
                         } else {
-                            socket.emit('error', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
+                            socket.emit('reject', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
                         }
                     });
                     channel.deferred.resolve(channel);
@@ -214,7 +216,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
             return rpcMaster;
 
         } else {
-            console.warn("ignoring connect command, either url of master null or already connected");
+            $log.warn("ignoring connect command, either url of master null or already connected");
         }
     };
     var rpc = {
@@ -237,7 +239,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                     });
                 return rpcMaster.__channelListLoad.promise;
             } else {
-                console.error("no connection to master");
+                $log.error("no connection to master");
             }
 
         },
@@ -310,7 +312,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $q) {
                             var ctrl = $controller(ctrlName, localInj);
                             iElement.children().data('$ngControllerController', ctrl);
                         }, function (err) {
-                            console.error("Cannot instantiate rpc-controller - channel failed to load");
+                            $log.error("Cannot instantiate rpc-controller - channel failed to load");
                         });
                     };
                     if (attr.rpcAuth) {

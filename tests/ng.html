@@ -29,7 +29,12 @@
             myChannel.myAsyncTest('passing string as argument').then(function (retVal) {
                 console.log('server returned: ' + retVal);
                 $scope.asyncTest = retVal;
+            }, function (er) {
+                console.error(er);
             });
+
+            myChannel.failingMethod();    // this will display error prpagated from serverside
+
             console.log('ctr run ' + new Date().toJSON());
 
         }).run(function ($rpc, $rootScope) {
