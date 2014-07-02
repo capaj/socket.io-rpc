@@ -1,31 +1,15 @@
 # socket.io-rpc  [![NPM version](https://badge.fury.io/js/socket.io-rpc.png)](http://badge.fury.io/js/socket.io-rpc)
 
 It is a minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and bluebird.js.
-Main purpose is to make it more easier to structure your code for browser-server realtime interaction. Typical example is when you need to call a function on the server from client and get the return value from that function back to the client. With raw socket.io, you need to register few events and emit them at the righ moment. This can get complicated quite easily, especially for async operations. 
+Main purpose is to make it more easier to structure your code for browser-server realtime interaction. Typical example is when you need to call a function on the server from client and get the return value from that function back to the client. With raw socket.io, you need to register few events and emit them at the right moment. This can get complicated quite easily, especially for async operations. 
 
-With socket.io-rpc, you just expose a channel of functions and then call those as if they were regular async functions defined on your side, socket.io-rpc automatically resolves a promise on other side, when function returns or returned promise is resolved. It even propagates errors, so you get error handling almost for free.
+With socket.io-rpc, you just expose a channel of functions and then call those as if they were regular async functions defined on your side, socket.io-rpc automatically resolves a promise on other side, when function returns or returned promise is resolved. It even propagates errors(thrown and returned), so you get error handling almost for free.
 In other words it promisifies socket.io network calls.
 
-
 Has two client libraries-one for general use, other for AngularJS.
-Angular.js lib contains special rpc-controller, which when compiled asynchronously loads server channel and instantiatel classic angular controller.
-
-## Browser support
-    numbers are for both clients(vanilla and Angular):
-    IE	FIREFOX	SAFARI	CHROME	OPERA	IPHONE	ANDROID
-    8.0+	3.5+	4.0+	4.0+	10.5+	2.0+	2.0+
-    note: ES5-shim is required in order for socket.io-rpc to work under non ES5 environments such as IE8
-
-## Internal callbacks on client
-There are 4 internal callbacks, which might help you in case you need to be notified of a request beginning and ending:
-
-    onBatchStarts   //called when invocation counter equals 1
-    onBatchEnd      //called when invocation counter equals endCounter
-    onCall          //called when one call is made to server
-    onEnd           //called when one call is returned
+Angular.js lib contains special rpc-controller, which when compiled asynchronously loads server channel and instantiates classic angular controller.
 
 ## Usage example
-
 
 ###Serverside
     var io = require('socket.io').listen(server);
@@ -171,6 +155,20 @@ There are 4 internal callbacks, which might help you in case you need to be noti
         }
     );
 
+
+## Browser support
+    numbers are for both clients(vanilla and Angular):
+    IE	FIREFOX	SAFARI	CHROME	OPERA	IPHONE	ANDROID
+    8.0+	3.5+	4.0+	4.0+	10.5+	2.0+	2.0+
+    note: ES5-shim is required in order for socket.io-rpc to work under non ES5 environments such as IE8
+
+## Internal callbacks on client
+There are 4 internal callbacks, which might help you in case you need to be notified of a request beginning and ending:
+
+    onBatchStarts   //called when invocation counter equals 1
+    onBatchEnd      //called when invocation counter equals endCounter
+    onCall          //called when one call is made to server
+    onEnd           //called when one call is returned
 
 #TODO
 1. add Winston logging.
