@@ -77,7 +77,13 @@ var RpcChannel = function (name, toExpose, authFn) {      //
     this._socket.on('connection', function (socket) {
         var invocationRes = function (data) {
             if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
-                var retVal = toExpose[data.fnName].apply(socket, data.args);
+                var retVal;
+                try{
+                    retVal = toExpose[data.fnName].apply(socket, data.args);
+                }catch(e){
+                    console.error('RPC method ' + data.fnName + ' on channel ' + name + ': ',e);
+                    retVal = e;
+                }
                 /* NOTE: Will return true for *any thenable object*, and isn't truly safe, since it will access the `then` property*/
                 if (retVal && typeof retVal.then === 'function') {    // this is async function, so 'return' is emitted after it finishes
                     retVal.then(function (asyncRetVal) {
