@@ -14,6 +14,7 @@
     <div rpc-controller="testCtrl" rpc-channel="myChannel" rpc-auth="local">
         getTime: <span ng-bind="serverTime"></span><br>
         asyncTest: {{ asyncTest }}
+        <button ng-click="myChannel.getTime()">getTime()</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -35,6 +36,7 @@
 
             myChannel.failingMethod();    // this will display error prpagated from serverside
 
+            $scope.myChannel = myChannel;
             console.log('ctr run ' + new Date().toJSON());
 
         }).run(function ($rpc, $rootScope) {

@@ -52,6 +52,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
         }
         var channel = serverChannels[name];
         channel._loadDef = deferred;
+        channel._handshake = handshakeData;
         serverRunDateDeferred.promise.then(function () {
 
             var cacheKey = getCacheKey(name);
@@ -145,6 +146,10 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
             .on('disconnect', function (data) {
                 delete serverChannels[name];
                 $log.warn("Server channel " + name + " disconnected.");
+            })
+            .on('reconnect', function () {
+                $log.info('reconnected channel' + name);
+                rpc.loadChannel(name, channel._handshake, true);
             });
     };
 
@@ -248,10 +253,11 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
          * channel, it will return it's instance
          * @param {string} name
          * @param {*} [handshakeData] custom param for authentication
+         * @param {Boolean} force pass true when you want to load the channnel again even if it exists already-used on reconnection
          * @returns {promise}
          */
-        loadChannel: function (name, handshakeData) {
-            if (serverChannels.hasOwnProperty(name)) {
+        loadChannel: function (name, handshakeData, force) {
+            if (serverChannels.hasOwnProperty(name) && !force) {
                 return serverChannels[name]._loadDef.promise;
             } else {
                 var def = $q.defer();
