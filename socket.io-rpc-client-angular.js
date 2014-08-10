@@ -123,6 +123,11 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
      * @param {String} name
      */
     var connectToServerChannel = function (channel, name) {
+        var reconDfd = $q.defer();
+
+        if (channel._socket) {
+            return; //this was fired upon reconnect, so let's not register any more event subscribers
+        }
 
         channel._socket = io.connect(baseURL + '/rpc-' + name)
             .on('resolve', function (data) {
@@ -144,15 +149,13 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                 channel._loadDef.reject(reason);
             })
             .on('disconnect', function (data) {
-                var reconDfd = $q.defer();
                 channel._loadDef = reconDfd;
                 $log.warn("Server channel " + name + " disconnected.");
-
-                channel._socket.on('reconnect', function () {
-                    $log.info('reconnected channel' + name);
-                    _loadChannel(name, channel._handshake, reconDfd);
-                });
-            });
+            })
+            .on('reconnect', function () {
+            $log.info('reconnected channel' + name);
+            _loadChannel(name, channel._handshake, reconDfd);
+        });
     };
 
     /**

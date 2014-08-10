@@ -12,9 +12,8 @@
     <!--You can also use regular ng-controller, but then you have to load channel yourself by calling
     $rpc.loadChannel('myChannel'); inside it-->
     <div rpc-controller="testCtrl" rpc-channel="myChannel" rpc-auth="local">
-        getTime: <span ng-bind="serverTime"></span><br>
+        getTime: <span ng-bind="serverTime"></span> <button ng-click="getTime()">getTime()</button><br>
         asyncTest: {{ asyncTest }}
-        <button ng-click="myChannel.getTime()">getTime()</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -22,11 +21,7 @@
     <script src="/rpc/rpc-client-angular.js"></script>
     <script>
         angular.module('app', ['RPC']).controller('testCtrl', function ($scope, $rpc, myChannel) {
-            myChannel.getTime().then(function (date) {
-                console.log('time on server is: ' + date);
-                $scope.serverTime = date;
-                //no need to call $scope.$apply, because it is called in $rpc;
-            });
+
             myChannel.myAsyncTest('passing string as argument').then(function (retVal) {
                 console.log('server returned: ' + retVal);
                 $scope.asyncTest = retVal;
@@ -36,7 +31,16 @@
 
             myChannel.failingMethod();    // this will display error prpagated from serverside
 
-            $scope.myChannel = myChannel;
+            $scope.getTime = function () {
+                myChannel.getTime().then(function (date) {
+                    console.log('time on server is: ' + date);
+                    $scope.serverTime = date;
+                    //no need to call $scope.$apply, because it is called in $rpc;
+                });
+            };
+
+            $scope.getTime();
+
             console.log('ctr run ' + new Date().toJSON());
 
         }).run(function ($rpc, $rootScope) {
