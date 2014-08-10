@@ -144,12 +144,14 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                 channel._loadDef.reject(reason);
             })
             .on('disconnect', function (data) {
-                delete serverChannels[name];
+                var reconDfd = $q.defer();
+                channel._loadDef = reconDfd;
                 $log.warn("Server channel " + name + " disconnected.");
-            })
-            .on('reconnect', function () {
-                $log.info('reconnected channel' + name);
-                rpc.loadChannel(name, channel._handshake, true);
+
+                channel._socket.on('reconnect', function () {
+                    $log.info('reconnected channel' + name);
+                    _loadChannel(name, channel._handshake, reconDfd);
+                });
             });
     };
 
