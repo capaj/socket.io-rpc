@@ -192,7 +192,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                     $rootScope.$apply();
 
                 })
-                .on('client channel created', function (name) {
+                .on('clientChannelCreated', function (name) {
 
                     var channel = clientChannels[name];
                     var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.io.engine.id);  //rpcC stands for rpc Client
@@ -291,7 +291,14 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                 fnNames.push(fn);
             }
 
-			rpcMaster.emit('expose channel', {name: name, fns: fnNames});
+			rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
+            rpcMaster
+                .on('disconnect', function () {
+                    channel.deferred = $q.defer();
+                })
+                .on('reexposeChannels', function () {
+                    rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
+                });
 
             return channel.deferred.promise;
         }

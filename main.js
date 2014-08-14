@@ -173,13 +173,34 @@ module.exports = {
 
 		io = ioP;
 
-
 		io.sockets.on('connection', function (socket) {
 			clientKnownChannels[socket.id] = [];
+
+            var timeoutId;
+
             socket.on('disconnect', function() {
-				delete clientChannels[socket.id];   //cleaning up in disconnect
-                delete clientKnownChannels[socket.id]; //cleaning up in disconnect
+                timeoutId = setTimeout(function () {
+                    console.log("cleaning client channels of " + socket.id);
+                    delete clientChannels[socket.id];   //cleaning up in disconnect
+                    delete clientKnownChannels[socket.id]; //cleaning up in disconnect
+                }, 300000); // after five minutes, get rid of client channels
 			});
+
+            socket.on('reconnect', function () {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+                var thisClientChnls = clientChannels[socket.id];
+                if (!thisClientChnls) {
+                    //TODO ask client to reexpose channels
+                    socket.emit('reexposeChannels');
+                } else {
+                    var index = thisClientChnls.length;
+                    while(index--) {
+                        socket.emit('clientChannelCreated', thisClientChnls[index].name);
+                    }
+                }
+            })
 		});
 
 		var authProcess = function (data, callback, socket) {
@@ -242,7 +263,7 @@ module.exports = {
                     socket.emit('channels', { list: getChannelNames() });
                 });
 
-                socket.on('expose channel', function (data) {   // client wants to expose a channel
+                socket.on('exposeChannel', function (data) {   // client wants to expose a channel
                     console.log("client with ID" + socket.id +" exposed rpc channel " + data.name);
                     var channel = getClientChannel(socket.id, data.name);
                     channel.dfd = channel.dfd || Promise.defer();
@@ -275,7 +296,7 @@ module.exports = {
 
                     });
 
-                    socket.emit('client channel created', data.name);
+                    socket.emit('clientChannelCreated', data.name);
 
                 });
 
