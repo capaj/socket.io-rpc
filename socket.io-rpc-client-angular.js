@@ -165,7 +165,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
      * returns {Socket} master socket namespace which you can use for looking under the hood
      */
     var connect = function (url, handshake) {
-        var clidKey = 'SIORPC:clientId';
+
 		if (!rpcMaster && url) {
             baseURL = url;
             rpcMaster = io.connect(url + '/rpc-master', handshake)
@@ -223,14 +223,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                     });
                     channel.deferred.resolve(channel);
 
-                }).on('connect', function() {
-					var clId = rpcMaster.getClientId();
-					if (!clId) {
-						clId = rpcMaster.io.engine.id;
-						localStorage.setItem(clidKey, clId);
-					}
-					rpcMaster.emit('originalId', clId);
-				});
+                });
 
 			rpcMaster.getClientId = function() {
 				return localStorage.getItem(clidKey);
@@ -302,7 +295,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                 fnNames.push(fn);
             }
 			var expose = function() {
-				rpcMaster.emit('exposeChannel', {clId: rpcMaster.getClientId(), name: name, fns: fnNames});
+				rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
 			};
 
 			if (rpcMaster.connected) {

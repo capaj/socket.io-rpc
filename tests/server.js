@@ -59,19 +59,25 @@ rpc.expose('myChannel', {
 //	}
 });
 
-rpc.onNewClient(function(clId) {
-	rpc.loadClientChannel(clId, 'clientChannel').then(function (fns) {
-		setInterval(function() {
-			console.log("cl call " + clId);
+io.sockets.on('connection', function (socket) {
+    var intId;
 
-			fns.fnOnClient("calling client ").then(function (ret) {
-				console.log("client returned: " + ret);
-			});
-		}, 5000);
+    rpc.loadClientChannel(socket, 'clientChannel').then(function (fns) {
+        intId = setInterval(function() {
+            console.log("cl call " + socket.id);
 
-	});
+            fns.fnOnClient("calling client ").then(function (ret) {
+                console.log("client returned: " + ret);
+            });
+        }, 5000);
+    });
+
+    socket.on('disconnect', function () {
+        console.log("disconnected, stop calling it");
+        clearInterval(intId);
+    });
+
 });
-
 
 app.get('/ng', function (req, res) {
     res.sendfile('./tests/ng.html');
