@@ -131,7 +131,7 @@ var RPC = (function (rpc) {
 					console.error("Unknown error occured on RPC socket connection, reason: ", data.reason);
 				}
 			})
-			.on('connect_failed', function (reason) {
+			.on('connectFailed', function (reason) {
 				console.error('unable to connect to namespace ', reason);
 				channel._loadDef.reject(reason);
 			})
@@ -145,7 +145,7 @@ var RPC = (function (rpc) {
      * connects to remote server which exposes RPC calls
      * @param {String} url to connect to, for example http://localhost:8080
      * @param {Object} handshake for global authorization
-     * returns {Socket} master socket
+     * @returns {Socket} master socket
      */
     var connect = function (url, handshake) {
         if (!rpcMaster && url) {
@@ -171,7 +171,7 @@ var RPC = (function (rpc) {
                     channel._loadDef.reject();
                     console.warn("no channel under name: " + data.name);
                 })
-                .on('client channel created', function (name) {
+                .on('clientChannelCreated', function (name) {
                     var channel = clientChannels[name];
                     var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.io.engine.id);  //rpcC stands for rpc Client
                     channel._socket = socket;
@@ -271,7 +271,7 @@ var RPC = (function (rpc) {
 			fnNames.push(fn);
         }
 
-		rpcMaster.emit('expose channel', {name: name, fns: fnNames});
+		rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
 
         return channel.deferred.promise;
     };

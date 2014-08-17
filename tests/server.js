@@ -29,7 +29,7 @@ var Promise = require('bluebird');
 var rpc = require('../main.js');
 var io = require('socket.io').listen(server);
 
-rpc.createServer(io, { useChannelTemplates: true, expressApp: app });
+var rpcMaster = rpc.createServer(io, { useChannelTemplates: true, expressApp: app });
 rpc.expose('myChannel', {
     //plain JS function
     getTime: function () {
@@ -59,12 +59,22 @@ rpc.expose('myChannel', {
 //	}
 });
 
-
 io.sockets.on('connection', function (socket) {
+    var intId;
+
     rpc.loadClientChannel(socket, 'clientChannel').then(function (fns) {
-        fns.fnOnClient("calling client ").then(function (ret) {
-            console.log("client returned: " + ret);
-        });
+        intId = setInterval(function() {
+            console.log("cl call " + socket.id);
+
+            fns.fnOnClient("calling client ").then(function (ret) {
+                console.log("client returned: " + ret);
+            });
+        }, 5000);
+    });
+
+    socket.on('disconnect', function () {
+        console.log("disconnected, stop calling it");
+        clearInterval(intId);
     });
 
 });

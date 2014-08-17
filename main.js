@@ -15,10 +15,12 @@ var serverChannels = {};
 var clientChannels = {};
 var getClientChannel = function (id, name) {
     if (!clientChannels.hasOwnProperty(id)) {
-        clientChannels[id] = {};
+        //console.log("creating an object for client channels for ID " + id);
+		clientChannels[id] = {};
     }
     if (!clientChannels[id].hasOwnProperty(name)) {
-        clientChannels[id][name] = {};
+		//console.log("creating a client channel for client with ID " + id + " and channel name " + name);
+		clientChannels[id][name] = {};
     }
     return clientChannels[id][name];
 };
@@ -33,7 +35,6 @@ var getChannelNames = function () {
 
 
 /**
- *
  * @param {String} name
  * @param {Object} toExpose
  * @param {Function} [authFn] should return boolean value, if true access to a channel is allowed
@@ -116,7 +117,7 @@ var RpcChannel = function (name, toExpose, authFn) {      //
                     delete self.authenticated[socket.id];   // cleaning up
                 });
             } else {
-                socket.emit('connect_failed', "Authentication for channel failed");
+                socket.emit('connectFailed', "Authentication for channel failed");
                 socket.disconnect();    // forcibly disconnect
             }
         } else {
@@ -173,13 +174,34 @@ module.exports = {
 
 		io = ioP;
 
-
 		io.sockets.on('connection', function (socket) {
 			clientKnownChannels[socket.id] = [];
+
+            var timeoutId;
+
             socket.on('disconnect', function() {
-				delete clientChannels[socket.id];   //cleaning up in disconnect
-                delete clientKnownChannels[socket.id]; //cleaning up in disconnect
+                timeoutId = setTimeout(function () {
+                    console.log("cleaning client channels of " + socket.id);
+                    delete clientChannels[socket.id];   //cleaning up in disconnect
+                    delete clientKnownChannels[socket.id]; //cleaning up in disconnect
+                }, 300000); // after five minutes, get rid of client channels
 			});
+
+            socket.on('reconnect', function () {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+                var thisClientChnls = clientChannels[socket.id];
+                if (!thisClientChnls) {
+                    //TODO ask client to reexpose channels
+                    socket.emit('reexposeChannels');
+                } else {
+                    var index = thisClientChnls.length;
+                    while(index--) {
+                        socket.emit('clientChannelCreated', thisClientChnls[index].name);
+                    }
+                }
+            })
 		});
 
 		var authProcess = function (data, callback, socket) {
@@ -197,6 +219,7 @@ module.exports = {
 
         return io.of('/rpc-master')
             .on('connection', function (socket) {
+
 				socket.on('authenticate', function (data) {	//gets called everytime even when functions are cached
 					var callback = function (authorized) {
 						if (authorized) {
@@ -242,9 +265,10 @@ module.exports = {
                     socket.emit('channels', { list: getChannelNames() });
                 });
 
-                socket.on('expose channel', function (data) {   // client wants to expose a channel
-                    console.log("client with ID" + socket.id +" exposed rpc channel " + data.name);
-                    var channel = getClientChannel(socket.id, data.name);
+                socket.on('exposeChannel', function (data) {   // client wants to expose a channel
+                    var clId = socket.id;
+					console.log("client with id " + clId +" exposed rpc channel " + data.name);
+                    var channel = getClientChannel(clId, data.name);
                     channel.dfd = channel.dfd || Promise.defer();
 //                    channel.deferred = channel.deferred || when.defer();
                     channel.fns = channel.fns || {};
@@ -270,12 +294,20 @@ module.exports = {
                             callToClientEnded(data.Id);
                         });
 
+						socket.on('reconnect', function () {
+							//not sure about the deffered in this case-it should be there ready for being resolved/rejected,
+							// but who will reset it?
+							console.log("reconnected to client chnl " + data.name);
+							channel.dfd.resolve(channel.fns);
+
+						});
+
 //                        console.log("client connected to its own rpc channel " + data.name);
                         channel.dfd.resolve(channel.fns);
 
                     });
 
-                    socket.emit('client channel created', data.name);
+                    socket.emit('clientChannelCreated', data.name);
 
                 });
 
@@ -305,12 +337,13 @@ module.exports = {
     },
     /**
      *
-     * @param socket
-     * @param name
-     * @returns {Promise}
+     * @param {Socket} socket
+     * @param {String} name
+     * @returns {Promise} which will get resolved when client channel is ready
      */
     loadClientChannel: function (socket, name) {
         var channel = getClientChannel(socket.id, name);
+
         /**
          * @type {Promise}
          */
@@ -324,6 +357,7 @@ module.exports = {
                 for (var method in channel.fns) {
                     channel.fns[method] = err;	// references to client channel might be hold in client code, so we need to invalidate them
                 }
+                //console.log("disconnected clc " + name);
             });
         }
         return channel.dfd.promise;
