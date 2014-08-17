@@ -115,6 +115,11 @@ var RPC = (function (rpc) {
      * @param {String} name
      */
 	var connectToServerChannel = function (channel, name) {
+        var reconDfd = when.defer();
+
+        if (channel._socket) {
+            return; //this was fired upon reconnect, so let's not register any more event subscribers
+        }
 
 		channel._socket = io.connect(baseURL + '/rpc-' + name)
 			.on('resolve', function (data) {
@@ -136,9 +141,12 @@ var RPC = (function (rpc) {
 				channel._loadDef.reject(reason);
 			})
 			.on('disconnect', function (data) {
-				delete serverChannels[name];
+                channel._loadDef = reconDfd;
 				console.warn("Server channel " + name + " disconnected.");
-			});
+			}).on('reconnect', function () {
+                console.info('reconnected channel' + name);
+                _loadChannel(name, channel._handshake, reconDfd);
+            });
 	};
 
     /**
@@ -271,7 +279,22 @@ var RPC = (function (rpc) {
 			fnNames.push(fn);
         }
 
-		rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
+        var expose = function() {
+            rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
+        };
+
+        if (rpcMaster.connected) {
+            // when no on connect event will be fired, we just expose the channel immediately
+            expose();
+        }
+
+        rpcMaster
+            .on('disconnect', function () {
+                channel.deferred = when.defer();
+            })
+            .on('connect', expose)
+            .on('reexposeChannels', expose);	//not sure if this will be needed, since simulating socket.io
+        // reconnects is hard, leaving it here for now
 
         return channel.deferred.promise;
     };

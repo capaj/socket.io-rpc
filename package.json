@@ -1,6 +1,6 @@
 {
     "name": "socket.io-rpc",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "private": false,
     "author": "capaj <capajj@gmail.com>",
     "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
@@ -22,7 +22,7 @@
     ],
     "dependencies": {
         "when": "2.7.1",
-        "bluebird": "~2.2",
+        "bluebird": "~2.3",
         "lodash": "2.4.1"
     },
     "peerDependencies": {

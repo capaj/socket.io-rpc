@@ -225,9 +225,6 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
 
                 });
 
-			rpcMaster.getClientId = function() {
-				return localStorage.getItem(clidKey);
-			};
             return rpcMaster;
 
         } else {
