@@ -43,8 +43,8 @@
 
             console.log('ctr run ' + new Date().toJSON());
 
-        }).run(function ($rpc, $rootScope) {
-            $rpc.connect('http://localhost:8081');   // don't forget port, if you are not on 80
+        }).run(function ($rpc, $rootScope, $timeout) {
+            var io = $rpc.connect('http://localhost:8081');   // don't forget port, if you are not on 80
             $rpc.auth.local = function () {
                 return {passw: '123'};
             };
@@ -52,7 +52,8 @@
 
             $rpc.expose('clientChannel', {
                 fnOnClient: function (param) {
-                    return 'whatever you need from client returned ' + param;
+                    console.log("client method called");
+					return 'whatever you need from client returned ' + param;
                 }
             }).then(function (channel) {
                 console.log(" client channel ready");

@@ -29,7 +29,7 @@ var Promise = require('bluebird');
 var rpc = require('../main.js');
 var io = require('socket.io').listen(server);
 
-rpc.createServer(io, { useChannelTemplates: true, expressApp: app });
+var rpcMaster = rpc.createServer(io, { useChannelTemplates: true, expressApp: app });
 rpc.expose('myChannel', {
     //plain JS function
     getTime: function () {
@@ -59,15 +59,19 @@ rpc.expose('myChannel', {
 //	}
 });
 
+rpc.onNewClient(function(clId) {
+	rpc.loadClientChannel(clId, 'clientChannel').then(function (fns) {
+		setInterval(function() {
+			console.log("cl call " + clId);
 
-io.sockets.on('connection', function (socket) {
-    rpc.loadClientChannel(socket, 'clientChannel').then(function (fns) {
-        fns.fnOnClient("calling client ").then(function (ret) {
-            console.log("client returned: " + ret);
-        });
-    });
+			fns.fnOnClient("calling client ").then(function (ret) {
+				console.log("client returned: " + ret);
+			});
+		}, 5000);
 
+	});
 });
+
 
 app.get('/ng', function (req, res) {
     res.sendfile('./tests/ng.html');

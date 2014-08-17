@@ -42,7 +42,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
         try{
             localStorage[key] = JSON.stringify(data);
         }catch(e){
-            $log.warn("Error raised when writing to local storage: " + e); // probably quoata exceeded
+            $log.warn("Error raised when writing to local storage: " + e); // probably quota exceeded
         }
     }
 
@@ -144,7 +144,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                     $log.error("Unknown error occured on RPC socket connection");
                 }
             })
-            .on('connect_failed', function (reason) {
+            .on('connectFailed', function (reason) {
                 $log.error('unable to connect to namespace ', reason);
                 channel._loadDef.reject(reason);
             })
@@ -162,10 +162,11 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
      * connects to remote server which exposes RPC calls
      * @param {String} url to connect to, for example http://localhost:8080
      * @param {Object} handshake for global authorization
-     * returns {Socket} master socket
+     * returns {Socket} master socket namespace which you can use for looking under the hood
      */
     var connect = function (url, handshake) {
-        if (!rpcMaster && url) {
+        var clidKey = 'SIORPC:clientId';
+		if (!rpcMaster && url) {
             baseURL = url;
             rpcMaster = io.connect(url + '/rpc-master', handshake)
                 .on('serverRunDate', function (runDate) {
@@ -222,7 +223,18 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                     });
                     channel.deferred.resolve(channel);
 
-                });
+                }).on('connect', function() {
+					var clId = rpcMaster.getClientId();
+					if (!clId) {
+						clId = rpcMaster.io.engine.id;
+						localStorage.setItem(clidKey, clId);
+					}
+					rpcMaster.emit('originalId', clId);
+				});
+
+			rpcMaster.getClientId = function() {
+				return localStorage.getItem(clidKey);
+			};
             return rpcMaster;
 
         } else {
@@ -289,17 +301,24 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
 				}
                 fnNames.push(fn);
             }
+			var expose = function() {
+				rpcMaster.emit('exposeChannel', {clId: rpcMaster.getClientId(), name: name, fns: fnNames});
+			};
 
-			rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
+			if (rpcMaster.connected) {
+				// when no on connect event will be fired, we just expose the channel immediately
+				expose();
+			}
+
             rpcMaster
                 .on('disconnect', function () {
                     channel.deferred = $q.defer();
                 })
-                .on('reexposeChannels', function () {
-                    rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
-                });
+				.on('connect', expose)
+                .on('reexposeChannels', expose);	//not sure if this will be needed, since simulating socket.io
+                // reconnects is hard, leaving it here for now
 
-            return channel.deferred.promise;
+			return channel.deferred.promise;
         }
     };
     var nop = angular.noop;
