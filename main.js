@@ -8,7 +8,6 @@ var io;
 var channelTemplates = {};
 var channelTemplatesSize = 0;
 var clientKnownChannels = {};
-var newClientCBs = [];
 
 var options = { useChannelTemplates: true };        //object of options which is fed input on createServer method call
 var deferreds = [];
@@ -16,11 +15,11 @@ var serverChannels = {};
 var clientChannels = {};
 var getClientChannel = function (id, name) {
     if (!clientChannels.hasOwnProperty(id)) {
-        console.log("creating an object for client channels for ID " + id);
+        //console.log("creating an object for client channels for ID " + id);
 		clientChannels[id] = {};
     }
     if (!clientChannels[id].hasOwnProperty(name)) {
-		console.log("creating a client channel for client with ID " + id + " and channel name " + name);
+		//console.log("creating a client channel for client with ID " + id + " and channel name " + name);
 		clientChannels[id][name] = {};
     }
     return clientChannels[id][name];
@@ -36,7 +35,6 @@ var getChannelNames = function () {
 
 
 /**
- *
  * @param {String} name
  * @param {Object} toExpose
  * @param {Function} [authFn] should return boolean value, if true access to a channel is allowed
@@ -221,8 +219,7 @@ module.exports = {
 
         return io.of('/rpc-master')
             .on('connection', function (socket) {
-				var originalIdDeferred = Promise.defer();
-				socket._originalIdPromise = originalIdDeferred.promise;
+
 				socket.on('authenticate', function (data) {	//gets called everytime even when functions are cached
 					var callback = function (authorized) {
 						if (authorized) {
@@ -364,9 +361,5 @@ module.exports = {
             });
         }
         return channel.dfd.promise;
-
-    },
-	onNewClient: function(CB) {
-		newClientCBs.push(CB);
-	}
+    }
 };
