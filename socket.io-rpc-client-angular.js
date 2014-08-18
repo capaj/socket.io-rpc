@@ -272,17 +272,18 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
             }
         },
         /**
-         * @param name {string}
-         * @param toExpose {Object} object with functions as values
-         * @returns {Promise} a promise saying that server is connected and can call the client
+         * @param {string} name of the channel
+         * @param {Object} toExpose object with functions as values
+         * @returns {Promise} a promise confirming that server is connected and can call the client, throws an error if already exposed
          */
         expose: function (name, toExpose) { //
-            if (!clientChannels.hasOwnProperty(name)) {
-                clientChannels[name] = {};
+            if (clientChannels.hasOwnProperty(name)) {
+				throw new Error('Failed to expose channel, this client channel is already exposed');
             }
-            var channel = clientChannels[name];
-            channel.fns = toExpose;
-            channel.deferred = $q.defer();
+
+			var channel = {fns: toExpose, deferred: $q.defer()};
+			clientChannels[name] = channel;
+
             var fnNames = [];
             for(var fn in toExpose)
             {
@@ -309,7 +310,14 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                 // reconnects is hard, leaving it here for now
 
 			return channel.deferred.promise;
-        }
+        },
+		/**
+		 * @param name
+		 * @returns {Object} client channel
+		 */
+		getClientChannel: function(name) {
+			return clientChannels[name];
+		}
     };
     var nop = angular.noop;
 	//These are internal callbacks of socket.io-rpc, use them if you want to implement something like a global loader indicator
