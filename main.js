@@ -155,14 +155,17 @@ module.exports = {
         if (opts) {
             var app = opts.expressApp || opts;
             if (app.get) {
+				var sendFileOpts = {
+					root: './'
+				};
                 app.get('/rpc/rpc-client.js', function (req, res) {
-                    res.sendfile('./node_modules/socket.io-rpc/socket.io-rpc-client.js');
+                    res.sendFile('node_modules/socket.io-rpc/socket.io-rpc-client.js', sendFileOpts);
                 });
                 app.get('/rpc/rpc-client-angular.js', function (req, res) {
-                    res.sendfile('./node_modules/socket.io-rpc/socket.io-rpc-client-angular.js');
+                    res.sendFile('node_modules/socket.io-rpc/socket.io-rpc-client-angular.js', sendFileOpts);
                 });
                 app.get('/rpc/when.js', function (req, res) {   //used only for regular clients, angular client has it's own promise library
-                    res.sendfile('./node_modules/when/when.js');
+                    res.sendFile('node_modules/when/when.js', sendFileOpts);
                 });
             } else {
                 console.warn('you should provide express app or an object with express app on property expressApp');

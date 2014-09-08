@@ -6,22 +6,24 @@ app.use(require('morgan')('dev'));
 app.set('port', 8081);
 
 var server = app.listen(app.get('port'));
-
+var sendFileOpts = {
+	root: './'
+};
 // this block is not normally needed, only we don't have these installed through NPM for tests, so paths differ
 app.get('/es5-shim.js', function (req, res) {
-    res.sendfile('./tests/es5-shim.js');
+    res.sendFile(__dirname + 'es5-shim.js');
 });
 app.get('/angular.js', function (req, res) {
-    res.sendfile('./tests/angular.js');
+    res.sendFile(__dirname + '/angular.js');
 });
 app.get('/rpc/rpc-client.js', function (req, res) {  // this is not normally needed
-    res.sendfile('./socket.io-rpc-client.js');
+    res.sendFile('socket.io-rpc-client.js', sendFileOpts);
 });
 app.get('/rpc/rpc-client-angular.js', function (req, res) {  // this is not normally needed
-    res.sendfile('./socket.io-rpc-client-angular.js');
+    res.sendFile('socket.io-rpc-client-angular.js', sendFileOpts);
 });
 app.get('/rpc/when.js', function (req, res) {  // this is not normally needed
-    res.sendfile('./node_modules/when/when.js');
+    res.sendFile('node_modules/when/when.js', sendFileOpts);
 });
 
 
@@ -80,12 +82,12 @@ io.sockets.on('connection', function (socket) {
 });
 
 app.get('/ng', function (req, res) {
-    res.sendfile('./tests/ng.html');
+    res.sendFile(__dirname  + '/ng.html');
 });
 app.get('/ie8', function (req, res) {
-    res.sendfile('./tests/ie8.html');
+    res.sendFile(__dirname + '/ie8.html');
 });
 app.get('*', function (req, res) {
-    res.sendfile('./tests/index.html');
+    res.sendFile(__dirname + '/index.html');
 });
 
