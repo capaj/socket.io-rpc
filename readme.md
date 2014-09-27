@@ -46,14 +46,12 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
 ###In browser
 
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-        window.define = function(factory) {
-            try{ delete window.define; } catch(e){ window.define = void 0; } // IE
-            window.when = factory();
-        };
-        window.define.amd = {};
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/q.js/1.0.1/q.js"></script>
+    <script type="text/javascript">
+    	if (!window.Promise || !window.Promise.defer) {
+    		Promise = Q;
+    	}
     </script>
-    <script src="/rpc/when.js"></script>    // for optimal performance download and use here minified version, use this for development or for non-performance critical scenarios
     <script src="/rpc/rpc-client.js"></script>
     <script>
         RPC.connect('http://localhost:8080');
