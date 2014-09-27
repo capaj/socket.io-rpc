@@ -9,19 +9,12 @@ getTime: <span id="serverTime"></span><br>
 asyncTest: <span id="asyncText"></span>
 
 <script src="/socket.io/socket.io.js"></script>
-<script>
-    //define shim taken from: https://github.com/cujojs/when
-    window.define = function (factory) {
-        try {
-            delete window.define;
-        } catch (e) {
-            window.define = void 0;
-        } // IE
-        window.when = factory();
-    };
-    window.define.amd = {};
+<script src="http://cdnjs.cloudflare.com/ajax/libs/q.js/1.0.1/q.js"></script>
+<script type="text/javascript">
+	if (!window.Promise || !window.Promise.defer) {
+		Promise = Q;
+	}
 </script>
-<script src="/rpc/when.js"></script>
 <script src="/rpc/rpc-client.js"></script>
 <script>
     RPC.connect('http://localhost:8081');
@@ -29,11 +22,12 @@ asyncTest: <span id="asyncText"></span>
             .then(function (channel) {
                 channel.getTime().then(function (date) {
                     console.log('time on server is: ' + date);
-                    document.getElementById('serverTime').innerText = date;
-                });
+					setText(document.getElementById('serverTime'), date);
+
+				});
                 channel.myAsyncTest('passing string as argument').then(function (retVal) {
                     console.log('server returned: ' + retVal);
-                    document.getElementById('asyncText').innerText = retVal;
+					setText(document.getElementById('asyncText'), retVal);
                 }, function (er) {
                     console.error('error callback called');
                 });
@@ -44,9 +38,9 @@ asyncTest: <span id="asyncText"></span>
 
 
                 //channel.nonExistentRemoteFn();  // uncomment for typerror to be thrown and handled by otherwise promise method
-            }).otherwise(function (err) {
-                console.log(err + ' equals TypeError: Object #<Object> has no method nonExistentRemoteFn');
-            });
+            }, function (err) {
+				console.log(err + ' equals TypeError: Object #<Object> has no method nonExistentRemoteFn');
+			});
     RPC.expose('clientChannel', {
         fnOnClient: function (param) {
             return 'whatever you need from client returned ' + param;
@@ -57,6 +51,14 @@ asyncTest: <span id="asyncText"></span>
                 debugger;
             }
     );
+
+	function setText(elem, changeVal) {
+		if ((elem.textContent) && (typeof (elem.textContent) != "undefined")) {
+			elem.textContent = changeVal;
+		} else {
+			elem.innerText = changeVal;
+		}
+	}
 </script>
 </body>
 

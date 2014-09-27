@@ -9,7 +9,7 @@ var RPC = (function (rpc) {
     var baseURL;
     var rpcMaster;
     var serverRunDate;  // used for invalidating the cache
-    var serverRunDateDeferred = when.defer();
+    var serverRunDateDeferred = Promise.defer();
     serverRunDateDeferred.promise.then(function (date) {
         serverRunDate = new Date(date);
     });
@@ -97,7 +97,7 @@ var RPC = (function (rpc) {
                     rpc.onBatchStarts(invocationCounter);
                 }
                 rpc.onCall(invocationCounter);
-                deferreds[invocationCounter] = when.defer();
+                deferreds[invocationCounter] = Promise.defer();
                 return deferreds[invocationCounter].promise;
             };
         });
@@ -115,7 +115,7 @@ var RPC = (function (rpc) {
      * @param {String} name
      */
 	var connectToServerChannel = function (channel, name) {
-        var reconDfd = when.defer();
+        var reconDfd = Promise.defer();
 
         if (channel._socket) {
             return; //this was fired upon reconnect, so let's not register any more event subscribers
@@ -188,7 +188,7 @@ var RPC = (function (rpc) {
                         if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
                             var retVal = exposed[data.fnName].apply(this, data.args);
 
-                            if (when.isPromiseLike(retVal)) {
+                            if (retVal.then) {
                                 //async - promise must be returned in order to be treated as async
                                 retVal.then(function (asyncRetVal) {
                                     socket.emit('resolve', { Id: data.Id, value: asyncRetVal });
@@ -222,7 +222,7 @@ var RPC = (function (rpc) {
 
     rpc.loadAllChannels = function () {
         if (rpcMaster) {
-            rpcMaster.__channelListLoad = when.defer();
+            rpcMaster.__channelListLoad = Promise.defer();
             rpcMaster.emit('load channelList');
             rpcMaster
                 .on('channels', function (data) {
@@ -246,13 +246,13 @@ var RPC = (function (rpc) {
      * channel, it will return it's instance
      * @param {string} name
      * @param {*} [handshakeData] custom param for authentication
-     * @returns {when.promise}
+     * @returns {Promise}
      */
     rpc.loadChannel = function (name, handshakeData) {
         if (serverChannels.hasOwnProperty(name)) {
             return serverChannels[name]._loadDef.promise;
         } else {
-            var def = when.defer();
+            var def = Promise.defer();
             _loadChannel(name, handshakeData, def);
             return def.promise;
         }
@@ -261,7 +261,7 @@ var RPC = (function (rpc) {
     /**
      * @param name {string}
      * @param toExpose {Object} object with functions as values
-     * @returns {when.promise}
+     * @returns {Promise}
      */
     rpc.expose = function (name, toExpose) { //
         if (!clientChannels.hasOwnProperty(name)) {
@@ -269,7 +269,7 @@ var RPC = (function (rpc) {
         }
         var channel = clientChannels[name];
         channel.fns = toExpose;
-        channel.deferred = when.defer();
+        channel.deferred = Promise.defer();
         var fnNames = [];
         for(var fn in toExpose)
         {
@@ -290,7 +290,7 @@ var RPC = (function (rpc) {
 
         rpcMaster
             .on('disconnect', function () {
-                channel.deferred = when.defer();
+                channel.deferred = Promise.defer();
             })
             .on('connect', expose)
             .on('reexposeChannels', expose);	//not sure if this will be needed, since simulating socket.io
