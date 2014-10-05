@@ -1,4 +1,6 @@
 ## ChangeLog
+###0.5.4 -> 0.6.0
+More reasonable public API refactor, which now requires you to connect before you can load channels
 ###0.3.18 -> 0.3.19
 Finally a proper version of socket.io, so I removed temporary hacks from client channels instantiation, updated express.js peerDependency to ~4
 ###0.3.12 -> 0.3.13

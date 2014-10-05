@@ -15,8 +15,8 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
     // you should be able to use any other http://promises-aplus.github.io/promises-spec/ compliant library, but I would greatly recommend using bluebird
     var Promise = require('bluebird');
     var rpc = require('socket.io-rpc');
-    rpc.createServer(io, app);
-    rpc.expose('myChannel', {
+    var rpcMaster = rpc(io, {channelTemplates: true, expressApp: app})
+    	.expose('myChannel', {
         //plain JS function
         getTime: function () {
             console.log('Client ID is: ' + this.id);
@@ -34,7 +34,7 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
 
 
     io.sockets.on('connection', function (socket) {
-        rpc.loadClientChannel(socket,'clientChannel').then(function (fns) {
+        rpcMaster.loadClientChannel(socket,'clientChannel').then(function (fns) {
             fns.fnOnClient("calling client ").then(function (ret) {
                 console.log("client returned: " + ret);
             });
@@ -54,8 +54,8 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
     </script>
     <script src="/rpc/rpc-client.js"></script>
     <script>
-        RPC.connect('http://localhost:8080');
-        RPC.loadChannel('myChannel').then(
+        var localRPC = RPC('http://localhost:8080')
+        localRPC.loadChannel('myChannel').then(
             function (channel) {
                 channel.getTime().then(function (date) {
                     console.log('time on server is: ' + date);
@@ -66,7 +66,7 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
                 });
             }
         );
-        RPC.expose('clientChannel', {
+        localRPC.expose('clientChannel', {
             fnOnClient: function (param) {
                 return 'whatever you need from client returned ' + param;
             }
@@ -96,7 +96,7 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
     <script>
         angular.module('app', ['RPC'])
             .controller('testCtrl',
-            function ($scope, $rpc, myChannel) {
+            function ($scope, myChannel) {
                 myChannel.getTime().then(function (date) {
                     console.log('time on server is: ' + date);
                     $scope.serverTime = date;
@@ -107,21 +107,23 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
                     $scope.asyncTest = retVal;
                 });
                 console.log('ctr ' + new Date().toJSON());
-
-                $rpc.expose('clientChannel', {
-                    fnOnClient: function (param) {
-                        return 'whatever you need from client returned ' + param;
-                    }
-                }).then(
-                    function (channel) {
-                        console.log(" client channel ready");
-                    }
-                );
             }
-        ).run(function ($rpc, $rootScope) {
-                $rpc.connect('http://localhost:8080');   // don't forget port, if you are not on 80
+        ).run(
+        	function ($rpc, $rootScope) {
+                var localRPC = $rpc('http://localhost:8080');   // don't forget port, if you are not on 80
                 console.log('run ' + new Date().toJSON());
-            });
+
+                localRPC.expose('clientChannel', {
+					fnOnClient: function (param) {
+						return 'whatever you need from client returned ' + param;
+					}
+				}).then(
+					function (channel) {
+						console.log(" client channel ready");
+					}
+				);
+            }
+		);
 
         var injector = angular.bootstrap(document, ['app']);
 
@@ -130,7 +132,7 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
 
 ###With authentication (server)
 
-    rpc.expose('myChannel', {
+    localRPC.expose('myChannel', {
         ...
     },
         function (handshake, callback) {
@@ -146,7 +148,7 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
 
 ###With authentication (browser)
 
-    RPC.loadChannel('myChannel', { pswd: "super secret password" }).then(
+    localRPC.loadChannel('myChannel', { pswd: "super secret password" }).then(
         function (channel) {
            ...
         }

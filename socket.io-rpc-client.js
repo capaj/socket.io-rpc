@@ -1,6 +1,6 @@
 // RPC client
 var RPC = (function () {
-    var rpc = {};
+
 	var noop = function(){};
     var invocationCounter = 0;
     var endCounter = 0;
@@ -15,11 +15,13 @@ var RPC = (function () {
     serverRunDateDeferred.promise.then(function (date) {
         serverRunDate = new Date(date);
     });
-	//These are internal callbacks of socket.io-rpc, use them if you want to implement something like a global loader indicator
-    rpc.onBatchStarts = noop;	//called when invocation counter equals 1
-    rpc.onBatchEnd = noop;		//called when invocation counter equals endCounter
-    rpc.onCall = noop;			//called when invocation counter equals endCounter
-    rpc.onEnd = noop;			//called when one call is returned
+	var rpc = {
+		//These are internal callbacks of socket.io-rpc, use them if you want to implement something like a global loader indicator
+		onBatchStarts: noop, //called when invocation counter equals 1
+		onBatchEnd: noop,    //called when invocation counter equals endCounter
+		onCall: noop,        //called when invocation counter equals endCounter
+		onEnd: noop         //called when one call is returned
+	};
 
     var callEnded = function (Id) {
         if (deferreds[Id]) {

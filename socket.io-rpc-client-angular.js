@@ -261,8 +261,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
             onBatchStarts: nop, //called when invocation counter equals 1
             onBatchEnd: nop,    //called when invocation counter equals endCounter
             onCall: nop,        //called when invocation counter equals endCounter
-            onEnd: nop,         //called when one call is returned
-            auth: {}
+            onEnd: nop         //called when one call is returned
         };
 
         baseURL = url;
