@@ -17,8 +17,8 @@ asyncTest: <span id="asyncText"></span>
 </script>
 <script src="/rpc/rpc-client.js"></script>
 <script>
-    RPC.connect('http://localhost:8081');
-    RPC.loadChannel('myChannel', {passw: '123'})
+    var backend = RPC('http://localhost:8081');
+    backend.loadChannel('myChannel', {passw: '123'})
             .then(function (channel) {
                 channel.getTime().then(function (date) {
                     console.log('time on server is: ' + date);
@@ -41,7 +41,8 @@ asyncTest: <span id="asyncText"></span>
             }, function (err) {
 				console.log(err + ' equals TypeError: Object #<Object> has no method nonExistentRemoteFn');
 			});
-    RPC.expose('clientChannel', {
+	
+    backend.expose('clientChannel', {
         fnOnClient: function (param) {
             return 'whatever you need from client returned ' + param;
         }

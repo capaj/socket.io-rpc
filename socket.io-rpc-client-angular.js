@@ -1,3 +1,6 @@
+/**
+ * factory which returns a connect function
+ */
 angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
     var invocationCounter = 0;
     var endCounter = 0;
@@ -158,6 +161,94 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
             });
     };
 
+	var rpc = {
+		loadAllChannels: function () {
+			if (rpcMaster) {
+				rpcMaster.__channelListLoad = $q.defer();
+				rpcMaster.emit('load channelList');
+				rpcMaster
+					.on('channels', function (data) {
+						var name = data.list.pop();
+						while(name) {
+							serverChannels[name] = {};
+							_loadChannel(name);
+							name = data.list.pop();
+						}
+						rpcMaster.__channelListLoad.resolve(serverChannels);
+						$rootScope.$apply();
+
+					});
+				return rpcMaster.__channelListLoad.promise;
+			} else {
+				$log.error("no connection to master");
+			}
+
+		},
+		/**
+		 * for a particular channel this will connect and prepare the channel for use, if called more than once for one
+		 * channel, it will return it's promise
+		 * @param {string} name
+		 * @param {*} [handshakeData] custom param for authentication
+		 * @returns {promise}
+		 */
+		loadChannel: function (name, handshakeData) {
+			if (serverChannels.hasOwnProperty(name)) {
+				return serverChannels[name]._loadDef.promise;
+			} else {
+				var def = $q.defer();
+				_loadChannel(name, handshakeData, def);
+				return def.promise;
+			}
+		},
+		/**
+		 * @param {string} name of the channel
+		 * @param {Object} toExpose object with functions as values
+		 * @returns {Promise} a promise confirming that server is connected and can call the client, throws an error if already exposed
+		 */
+		expose: function (name, toExpose) { //
+			if (clientChannels.hasOwnProperty(name)) {
+				throw new Error('Failed to expose channel, this client channel is already exposed');
+			}
+
+			var channel = {fns: toExpose, deferred: $q.defer()};
+			clientChannels[name] = channel;
+
+			var fnNames = [];
+			for(var fn in toExpose)
+			{
+				if (fn === '_socket') {
+					throw new Error('Failed to expose channel, _socket property is reserved for socket namespace');
+				}
+				fnNames.push(fn);
+			}
+			var expose = function() {
+				rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
+			};
+
+			if (rpcMaster.connected) {
+				// when no on connect event will be fired, we just expose the channel immediately
+				expose();
+			}
+
+			rpcMaster
+				.on('disconnect', function () {
+					channel.deferred = $q.defer();
+				})
+				.on('connect', expose)
+				.on('reexposeChannels', expose);	//not sure if this will be needed, since simulating socket.io
+			// reconnects is hard, leaving it here for now
+
+			return channel.deferred.promise;
+		},
+		/**
+		 * @param name
+		 * @returns {Object} client channel
+		 */
+		getClientChannel: function(name) {
+			return clientChannels[name];
+		}
+	};
+
     /**
      * connects to remote server which exposes RPC calls
      * @param {String} url to connect to, for example http://localhost:8080
@@ -224,101 +315,14 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                     channel.deferred.resolve(channel);
 
                 });
-
-            return rpcMaster;
+			rpc.masterChannel = rpcMaster;
+            return rpc;
 
         } else {
             $log.warn("ignoring connect command, either url of master null or already connected");
         }
     };
-    var rpc = {
-        connect: connect,
-        loadAllChannels: function () {
-            if (rpcMaster) {
-                rpcMaster.__channelListLoad = $q.defer();
-                rpcMaster.emit('load channelList');
-                rpcMaster
-                    .on('channels', function (data) {
-                        var name = data.list.pop();
-                        while(name) {
-                            serverChannels[name] = {};
-                            _loadChannel(name);
-                            name = data.list.pop();
-                        }
-                        rpcMaster.__channelListLoad.resolve(serverChannels);
-                        $rootScope.$apply();
 
-                    });
-                return rpcMaster.__channelListLoad.promise;
-            } else {
-                $log.error("no connection to master");
-            }
-
-        },
-        /**
-         * for a particular channel this will connect and prepared the channel for use, if called more than once for one
-         * channel, it will return it's instance
-         * @param {string} name
-         * @param {*} [handshakeData] custom param for authentication
-         * @returns {promise}
-         */
-        loadChannel: function (name, handshakeData) {
-            if (serverChannels.hasOwnProperty(name)) {
-                return serverChannels[name]._loadDef.promise;
-            } else {
-                var def = $q.defer();
-                _loadChannel(name, handshakeData, def);
-                return def.promise;
-            }
-        },
-        /**
-         * @param {string} name of the channel
-         * @param {Object} toExpose object with functions as values
-         * @returns {Promise} a promise confirming that server is connected and can call the client, throws an error if already exposed
-         */
-        expose: function (name, toExpose) { //
-            if (clientChannels.hasOwnProperty(name)) {
-				throw new Error('Failed to expose channel, this client channel is already exposed');
-            }
-
-			var channel = {fns: toExpose, deferred: $q.defer()};
-			clientChannels[name] = channel;
-
-            var fnNames = [];
-            for(var fn in toExpose)
-            {
-				if (fn === '_socket') {
-					throw new Error('Failed to expose channel, _socket property is reserved for socket namespace');
-				}
-                fnNames.push(fn);
-            }
-			var expose = function() {
-				rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
-			};
-
-			if (rpcMaster.connected) {
-				// when no on connect event will be fired, we just expose the channel immediately
-				expose();
-			}
-
-            rpcMaster
-                .on('disconnect', function () {
-                    channel.deferred = $q.defer();
-                })
-				.on('connect', expose)
-                .on('reexposeChannels', expose);	//not sure if this will be needed, since simulating socket.io
-                // reconnects is hard, leaving it here for now
-
-			return channel.deferred.promise;
-        },
-		/**
-		 * @param name
-		 * @returns {Object} client channel
-		 */
-		getClientChannel: function(name) {
-			return clientChannels[name];
-		}
-    };
     var nop = angular.noop;
 	//These are internal callbacks of socket.io-rpc, use them if you want to implement something like a global loader indicator
     rpc.onBatchStarts = nop;	//called when invocation counter equals 1
@@ -326,8 +330,8 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
     rpc.onCall = nop;			//called when invocation counter equals endCounter
     rpc.onEnd = nop;			//called when one call is returned
     rpc.auth = {};
-    return rpc;
-}).directive('rpcController', function ($controller, $q, $rpc) {
+    return connect;
+}).directive('rpcController', function ($controller, $q, $rpc, $log) {
     return {
 		scope: true,
 		compile: function compile(tEl, tAttrs) {
@@ -347,6 +351,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
                             iElement.children().data('$ngControllerController', ctrl);
                         }, function (err) {
                             $log.error("Cannot instantiate rpc-controller - channel failed to load");
+                            throw err;
                         });
                     };
                     if (attr.rpcAuth) {

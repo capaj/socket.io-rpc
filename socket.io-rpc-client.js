@@ -1,13 +1,15 @@
 // RPC client
-var RPC = (function (rpc) {
-    var noop = function(){};
+var RPC = (function () {
+    var rpc = {};
+	var noop = function(){};
     var invocationCounter = 0;
     var endCounter = 0;
     var serverChannels = {};
     var clientChannels = {};
     var deferreds = [];
     var baseURL;
-    var rpcMaster;
+    var masterChannel;
+
     var serverRunDate;  // used for invalidating the cache
     var serverRunDateDeferred = Promise.defer();
     serverRunDateDeferred.promise.then(function (date) {
@@ -65,7 +67,7 @@ var RPC = (function (rpc) {
                 cached = JSON.parse(cached);
                 if (serverRunDate < new Date(cached.cDate)) {
 					if (handshakeData) {
-						rpcMaster.emit('authenticate', {name: name, handshake: handshakeData});
+						masterChannel.emit('authenticate', {name: name, handshake: handshakeData});
 						channel.cached = cached;
 					} else {
                         connectToServerChannel(channel, name);
@@ -74,10 +76,10 @@ var RPC = (function (rpc) {
                 } else {
                     //cache has been invalidated
                     delete localStorage[cacheKey];
-                    rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
+                    masterChannel.emit('load channel', {name: name, handshake: handshakeData});
                 }
             } else {
-                rpcMaster.emit('load channel', {name: name, handshake: handshakeData});
+                masterChannel.emit('load channel', {name: name, handshake: handshakeData});
             }
         });
 
@@ -149,82 +151,11 @@ var RPC = (function (rpc) {
             });
 	};
 
-    /**
-     * connects to remote server which exposes RPC calls
-     * @param {String} url to connect to, for example http://localhost:8080
-     * @param {Object} handshake for global authorization
-     * @returns {Socket} master socket
-     */
-    var connect = function (url, handshake) {
-        if (!rpcMaster && url) {
-            baseURL = url;
-            rpcMaster = io.connect(url + '/rpc-master', handshake)
-                .on('serverRunDate', function (runDate) {
-                    serverRunDateDeferred.resolve(runDate);
-                })
-				.on('authenticated', function (data) {
-                    var name = data.name;
-                    var channel = serverChannels[name];
-                    connectToServerChannel(channel, name);
-					registerRemoteFunctions(channel.cached, false); // will register functions from cached manifest
-				})
-                .on('channelFns', function (data, storeInCache) {
-                    var name = data.name;
-                    var channel = serverChannels[name];
-                    connectToServerChannel(channel, name);
-					registerRemoteFunctions(data, storeInCache);
-				})
-                .on('channelDoesNotExist', function (data) {
-                    var channel = serverChannels[data.name];
-                    channel._loadDef.reject();
-                    console.warn("no channel under name: " + data.name);
-                })
-                .on('clientChannelCreated', function (name) {
-                    var channel = clientChannels[name];
-                    var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.io.engine.id);  //rpcC stands for rpc Client
-                    channel._socket = socket;
-                    socket.on('call', function (data) {
-                        var exposed = channel.fns;
-                        if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
-                            var retVal = exposed[data.fnName].apply(this, data.args);
-
-                            if (retVal.then) {
-                                //async - promise must be returned in order to be treated as async
-                                retVal.then(function (asyncRetVal) {
-                                    socket.emit('resolve', { Id: data.Id, value: asyncRetVal });
-                                }, function (error) {
-									if (error instanceof Error) {
-										error = error.toString();
-									}
-									socket.emit('reject', { Id: data.Id, reason: error });
-                                });
-                            } else {
-								//synchronous
-								if (retVal instanceof Error) {
-									socket.emit('reject', { Id: data.Id, reason: retVal.toString() });
-								} else {
-									socket.emit('resolve', { Id: data.Id, value: retVal });
-								}
-                            }
-
-                        } else {
-                            socket.emit('reject', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
-                        }
-                    });
-                    channel.deferred.resolve(channel);
-                });
-            return rpcMaster;
-        } else {
-            console.warn("ignoring connect command, either url of master null or already connected");
-        }
-    };
-    rpc.connect = connect;
-
     rpc.loadAllChannels = function () {
-        if (rpcMaster) {
-            rpcMaster.__channelListLoad = Promise.defer();
-            rpcMaster.emit('load channelList');
-            rpcMaster
+        if (masterChannel) {
+            masterChannel.__channelListLoad = Promise.defer();
+            masterChannel.emit('load channelList');
+            masterChannel
                 .on('channels', function (data) {
                     var name = data.list.pop();
                     while(name) {
@@ -232,9 +163,9 @@ var RPC = (function (rpc) {
                         _loadChannel(name);
                         name = data.list.pop();
                     }
-                    rpcMaster.__channelListLoad.resolve(serverChannels);
+                    masterChannel.__channelListLoad.resolve(serverChannels);
                 });
-            return rpcMaster.__channelListLoad.promise;
+            return masterChannel.__channelListLoad.promise;
         } else {
             console.error("no connection to master");
         }
@@ -280,15 +211,15 @@ var RPC = (function (rpc) {
         }
 
         var expose = function() {
-            rpcMaster.emit('exposeChannel', {name: name, fns: fnNames});
+            masterChannel.emit('exposeChannel', {name: name, fns: fnNames});
         };
 
-        if (rpcMaster.connected) {
+        if (masterChannel.connected) {
             // when no on connect event will be fired, we just expose the channel immediately
             expose();
         }
 
-        rpcMaster
+        masterChannel
             .on('disconnect', function () {
                 channel.deferred = Promise.defer();
             })
@@ -299,5 +230,76 @@ var RPC = (function (rpc) {
         return channel.deferred.promise;
     };
 
-    return rpc;
-}(RPC || {}));
+	/**
+	 * connects to remote server which exposes RPC calls
+	 * @param {String} url to connect to, for example http://localhost:8080
+	 * @param {Object} handshake for global authorization
+	 * @returns {Socket} master socket
+	 */
+	var connect = function (url, handshake) {
+		if (!masterChannel && url) {
+			baseURL = url;
+			masterChannel = io.connect(url + '/rpc-master', handshake)
+				.on('serverRunDate', function (runDate) {
+					serverRunDateDeferred.resolve(runDate);
+				})
+				.on('authenticated', function (data) {
+					var name = data.name;
+					var channel = serverChannels[name];
+					connectToServerChannel(channel, name);
+					registerRemoteFunctions(channel.cached, false); // will register functions from cached manifest
+				})
+				.on('channelFns', function (data, storeInCache) {
+					var name = data.name;
+					var channel = serverChannels[name];
+					connectToServerChannel(channel, name);
+					registerRemoteFunctions(data, storeInCache);
+				})
+				.on('channelDoesNotExist', function (data) {
+					var channel = serverChannels[data.name];
+					channel._loadDef.reject();
+					console.warn("no channel under name: " + data.name);
+				})
+				.on('clientChannelCreated', function (name) {
+					var channel = clientChannels[name];
+					var socket = io.connect(baseURL + '/rpcC-' + name + '/' + masterChannel.io.engine.id);  //rpcC stands for rpc Client
+					channel._socket = socket;
+					socket.on('call', function (data) {
+						var exposed = channel.fns;
+						if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
+							var retVal = exposed[data.fnName].apply(this, data.args);
+
+							if (retVal.then) {
+								//async - promise must be returned in order to be treated as async
+								retVal.then(function (asyncRetVal) {
+									socket.emit('resolve', { Id: data.Id, value: asyncRetVal });
+								}, function (error) {
+									if (error instanceof Error) {
+										error = error.toString();
+									}
+									socket.emit('reject', { Id: data.Id, reason: error });
+								});
+							} else {
+								//synchronous
+								if (retVal instanceof Error) {
+									socket.emit('reject', { Id: data.Id, reason: retVal.toString() });
+								} else {
+									socket.emit('resolve', { Id: data.Id, value: retVal });
+								}
+							}
+
+						} else {
+							socket.emit('reject', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnName });
+						}
+					});
+					channel.deferred.resolve(channel);
+				});
+			rpc.masterChannel = masterChannel;
+			return rpc;
+		} else {
+			console.warn("ignoring connect command, either url of master null or already connected");
+		}
+	};
+
+    return connect;
+}());
