@@ -259,17 +259,18 @@ var RPC = (function (rpc) {
     };
 
     /**
-     * @param name {string}
-     * @param toExpose {Object} object with functions as values
+     * @param {string} name identifies the channel,in case of name collision throws an error
+     * @param {Object} toExpose object with functions as values
      * @returns {Promise}
      */
     rpc.expose = function (name, toExpose) { //
-        if (!clientChannels.hasOwnProperty(name)) {
-            clientChannels[name] = {};
+        if (clientChannels.hasOwnProperty(name)) {
+            throw new Error('Failed to expose channel, this client channel is already exposed');
         }
-        var channel = clientChannels[name];
-        channel.fns = toExpose;
-        channel.deferred = Promise.defer();
+
+        var channel = {fns: toExpose, deferred: Promise.defer()};
+        clientChannels[name] = channel;
+
         var fnNames = [];
         for(var fn in toExpose)
         {

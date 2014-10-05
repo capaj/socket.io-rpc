@@ -272,7 +272,7 @@ angular.module('RPC', []).factory('$rpc', function ($rootScope, $log, $q) {
             }
         },
         /**
-         * @param {string} name of the channel
+         * @param {string} name identifies the channel,in case of name collision throws an error
          * @param {Object} toExpose object with functions as values
          * @returns {Promise} a promise confirming that server is connected and can call the client, throws an error if already exposed
          */
