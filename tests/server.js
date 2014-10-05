@@ -27,41 +27,42 @@ app.get('/rpc/rpc-client-angular.js', function (req, res) {  // this is not norm
 var Promise = require('bluebird');
 var rpc = require('../main.js');
 var io = require('socket.io').listen(server);
-
-var rpcMaster = rpc.createServer(io, { useChannelTemplates: true, expressApp: app });
-rpc.expose('myChannel', {
-    //plain JS function
-    getTime: function () {
-        console.log('Client ID is: ' + this.id);
-        return new Date();
-    },
-    //returns a promise, which when resolved will resolve promise on client-side with the result
-    myAsyncTest: function (param) {
-        var deffered = Promise.defer();
-        setTimeout(function(){
-            deffered.resolve("String generated asynchronously serverside with " + param);
-        },1000);
-        return deffered.promise;
-    },
-    failingMethod: function () {
-        var deffered = Promise.defer();
-        setTimeout(function(){
-            deffered.reject(new Error("Sample error"));
-        },2000);
-        return deffered.promise;
-    }
-//}, function (handshake, CB) {	//second parameter is optional for authenticated channels
-//	if (handshake.passw == '123') {
-//		CB(true);
-//	} else {
-//		CB(false);
-//	}
-});
+						//channelTemplates true is default, though you can change it, I would recommend leaving it to true,
+						//				   false is good only when your channels are dynamic so there is no point in caching
+var rpcMaster = rpc(io, {channelTemplates: true, expressApp: app})
+	.expose('myChannel', {
+		//plain JS function
+		getTime: function() {
+			console.log('Client ID is: ' + this.id);
+			return new Date();
+		},
+		//returns a promise, which when resolved will resolve promise on client-side with the result
+		myAsyncTest: function(param) {
+			var deffered = Promise.defer();
+			setTimeout(function() {
+				deffered.resolve("String generated asynchronously serverside with " + param);
+			}, 1000);
+			return deffered.promise;
+		},
+		failingMethod: function() {
+			var deffered = Promise.defer();
+			setTimeout(function() {
+				deffered.reject(new Error("Sample error"));
+			}, 2000);
+			return deffered.promise;
+		}
+	}, function(handshake, CB) {	//second function/parameter is optional for authenticated channels
+		if (handshake.passw == '123') {
+			CB(true);
+		} else {
+			CB(false);
+		}
+	});
 
 io.sockets.on('connection', function (socket) {
     var intId;
 
-    rpc.loadClientChannel(socket, 'clientChannel').then(function (fns) {
+    rpcMaster.loadClientChannel(socket, 'clientChannel').then(function (fns) {
         intId = setInterval(function() {
             console.log("cl call " + socket.id);
 
