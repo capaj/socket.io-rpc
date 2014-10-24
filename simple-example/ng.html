@@ -11,7 +11,11 @@
     <h1>Angular socket.io-rpc test/showcase</h1>
     <!--You can also use regular ng-controller, but then you have to load channel yourself by calling
     $rpc.loadChannel('myChannel'); inside it-->
-    <div rpc-controller="testCtrl" rpc-channel="myChannel" rpc-auth="authHash">
+    <div rpc-controller="testCtrl" rpc-channel="myChannel">
+        getTime: <span ng-bind="serverTime"></span> <button ng-click="getTime()">getTime()</button><br>
+        asyncTest: {{ asyncTest }}
+    </div>
+    <div rpc-controller="secondCtrl" rpc-channel="myChannel">
         getTime: <span ng-bind="serverTime"></span> <button ng-click="getTime()">getTime()</button><br>
         asyncTest: {{ asyncTest }}
     </div>
@@ -43,14 +47,39 @@
 
             console.log('ctr run ' + new Date().toJSON());
 
+        }).controller('secondCtrl', function($scope, myChannel) {
+
+            myChannel.myAsyncTest('passing string as argument in second ctrl').then(function (retVal) {
+                console.log('server returned: ' + retVal);
+                $scope.asyncTest = retVal;
+            }, function (er) {
+                console.error(er);
+            });
+
+            myChannel.failingMethod();    // this will display error prpagated from serverside
+
+            $scope.getTime = function () {
+                myChannel.getTime().then(function (date) {
+                    console.log('time on second controller is: ' + date);
+                    $scope.serverTime = date;
+                    //no need to call $scope.$apply, because it is called in $rpc;
+                });
+            };
+
+            $scope.getTime();
+
+            console.log('ctr run ' + new Date().toJSON());
+
         }).run(function ($rpc, $rootScope, $timeout) {
-            var backend = $rpc('http://localhost:8081');   // don't forget port, if you are not on 80
+//            var backend1 = $rpc('http://192.168.43.44:8081');   // don't forget port, if you are not on 80
+            var backend1 = $rpc('http://localhost:8081');   // don't forget port, if you are not on 80
+//            var backend2 = $rpc('http://localhost:8082');   // don't forget port, if you are not on 80
             $rootScope.authHash = function () {
                 return {passw: '123'};
             };
             console.log('ng run ' + new Date().toJSON());
 
-            backend.expose('clientChannel', {
+            backend1.expose('clientChannel', {
                 fnOnClient: function (param) {
                     console.log("client method called");
 					return 'whatever you need from client returned ' + param;
@@ -59,7 +88,8 @@
                 console.log(" client channel ready");
             });
 
-            $rootScope.local = backend; //backend is not needed on scope, but it would be needed if we wanted to work
+            $rootScope.backend1 = backend1; //backend is not needed on scope, but it would be needed if we wanted to work
+//            $rootScope.backend2 = backend2; //backend is not needed on scope, but it would be needed if we wanted to work
             // with multiple connections
         });
 

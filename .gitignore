@@ -1,5 +1,7 @@
 tests/node_modules/
 node_modules/
+simple-example/node_modules
+simple-example/jspm_packages
 
 
 *.pydevproject

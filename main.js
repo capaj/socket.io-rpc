@@ -76,12 +76,9 @@ module.exports = function createServer(ioP, opts) {
 			}
 
 		}
-		if (authFn) {
-			this.authFn = authFn;
-		}
-		this.authenticated = {};
+
 		this._socket = io.of('/rpc-' + name);
-		var self = this;
+
 		this._socket.on('connection', function (socket) {
 			var invocationRes = function (data) {
 				if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
@@ -117,19 +114,7 @@ module.exports = function createServer(ioP, opts) {
 				}
 			};
 
-			if (authFn) {
-				if (self.authenticated[socket.id]) {
-					socket.on('call', invocationRes);
-					socket.on('disconnect', function () {
-						delete self.authenticated[socket.id];   // cleaning up
-					});
-				} else {
-					socket.emit('connectFailed', "Authentication for channel failed");
-					socket.disconnect();    // forcibly disconnect
-				}
-			} else {
-				socket.on('call', invocationRes);
-			}
+			socket.on('call', invocationRes);
 
 		});
 
@@ -279,24 +264,11 @@ module.exports = function createServer(ioP, opts) {
 	rpcInstance.masterChannel = io.of('/rpc-master')
 		.on('connection', function (socket) {
 
-			socket.on('authenticate', function (data) {	//gets called everytime even when functions are cached
-				var callback = function (authorized) {
-					if (authorized) {
-						serverChannels[data.name].authenticated[socket.id] = true;  // we don't need any value here, existence of the ID in this object means that client is authorized
-						socket.emit('authenticated', {name: data.name});
-					} else {
-						socket.emit('AuthorizationFailed', data.name);
-					}
-				};
-				authProcess(data, callback, socket);
-
-			});
-
 			socket.on('load channel', function (data) {
 				var callback = function (authorized) {
 					if (authorized) {
 						var channel = serverChannels[data.name];
-						channel.authenticated[socket.id] = true;  // we don't need any value here, existence of the ID in this object means that client is authorized
+
 						if (data.cachedDate && data.cachedDate > runDate) {
 							socket.emit('channelFns', {name: data.name, upToDate: true});
 						} else {

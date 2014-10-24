@@ -1,4 +1,5 @@
-tests/node_modules
+tests
+simple-example
 
 bin/
 tmp/

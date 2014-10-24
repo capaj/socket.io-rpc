@@ -9,6 +9,8 @@ var server = app.listen(app.get('port'));
 var sendFileOpts = {
 	root: './'
 };
+app.use(express.static(__dirname));
+
 // this block is not normally needed, only we don't have these installed through NPM for tests, so paths differ
 app.get('/es5-shim.js', function (req, res) {
     res.sendFile(__dirname + 'es5-shim.js');

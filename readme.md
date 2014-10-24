@@ -8,6 +8,13 @@ With socket.io-rpc, you just expose a channel of functions and then call those a
 Has two client libraries-one for general use, other for AngularJS.
 Angular.js lib contains special rpc-controller directive, which when compiled asynchronously loads server channel and instantiates classic angular controller when this channel is ready.
 
+#Simple example
+Folder with example can be run by running:
+
+    npm install
+    jspm install
+    node server
+
 ## Usage example
 
 ###Serverside
@@ -44,39 +51,51 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
 
 
 ###In browser
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/q.js/1.0.1/q.js"></script>
+    //since it is desirable to be able to run the same code in node.js as in the browser, we use systemjs to load commonJS module into the browser
+    <script src="jspm_packages/system.js"></script>
+    <script src="config.js"></script> //needs to have bluebird and socket.io-client, look into simple_example folder
     <script type="text/javascript">
-    	if (!window.Promise || !window.Promise.defer) {
-    		Promise = Q;
-    	}
-    </script>
-    <script src="/rpc/rpc-client.js"></script>
-    <script>
-        var localRPC = RPC('http://localhost:8080')
-        localRPC.loadChannel('myChannel').then(
-            function (channel) {
-                channel.getTime().then(function (date) {
-                    console.log('time on server is: ' + date);
+        System.import('rpc/rpc-client').then(function(RPC) { //or you can include this package in CJS module of your own
+            console.log("rpc client loaded");
 
-                });
-                channel.myAsyncTest('passing string as argument').then(function(retVal){
-                    console.log('server returned: ' + retVal);
-                });
-            }
-        );
-        localRPC.expose('clientChannel', {
-            fnOnClient: function (param) {
-                return 'whatever you need from client returned ' + param;
-            }
-        }).then(
-            function (channel) {
-                console.log(" client channel ready");
-            }
-        );
-    </script>
+            var backend = RPC('http://localhost:8081');
+            backend.loadChannel('myChannel')
+                    .then(function (channel) {
+                          channel.getTime().then(function (date) {
+                              console.log('time on server is: ' + date);
 
+                          });
+                          channel.myAsyncTest('passing string as argument').then(function(retVal){
+                              console.log('server returned: ' + retVal);
+                          });
+                    }, function (err) {
+                        console.log(err + ' equals TypeError: Object #<Object> has no method nonExistentRemoteFn');
+                    });
+
+            backend.expose('clientChannel', {
+                fnOnClient: function (param) {
+                    return 'whatever you need from client returned ' + param;
+                }
+            }).then(function (channel) {
+                        console.log(" client channel ready");
+                    }, function (err) {
+                        debugger;
+                    }
+            );
+
+            function setText(elem, changeVal) {
+                if ((elem.textContent) && (typeof (elem.textContent) != "undefined")) {
+                    elem.textContent = changeVal;
+                } else {
+                    elem.innerText = changeVal;
+                }
+            }
+        }, function(e) {
+            setTimeout(function () {
+                console.error(e);
+            });
+        });
+    </script>
 
 ###In browser for AngularJS
 
@@ -91,7 +110,7 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
 
     </body>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="http://code.angularjs.org/1.2.0-rc.2/angular.js"></script>
+    <script src="http://code.angularjs.org/1.3.0/angular.js"></script>
     <script src="/rpc/rpc-client-angular.js"></script>
     <script>
         angular.module('app', ['RPC'])

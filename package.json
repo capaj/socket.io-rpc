@@ -1,31 +1,35 @@
 {
-    "name": "socket.io-rpc",
-    "version": "0.6.1",
-    "private": false,
-    "author": "capaj <capajj@gmail.com>",
-    "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
-    "scripts": {
-        "start": "node app"
-    },
-    "main": "./main.js",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/capaj/socket.io-rpc.git"
-    },
-    "engines": {
-        "node": "*"
-    },
-    "keywords": [
-        "socket.io",
-        "rpc",
-        "rmi"
-    ],
-    "dependencies": {
-        "bluebird": "~2.3",
-        "lodash": "2.4.1"
-    },
-    "peerDependencies": {
-        "socket.io": "1.1.0"
-    },
-    "license": "MIT"
+  "name": "socket.io-rpc",
+  "version": "0.6.9",
+  "private": false,
+  "author": "capaj <capajj@gmail.com>",
+  "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
+  "scripts": {
+    "start": "node app"
+  },
+  "main": "./main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/capaj/socket.io-rpc.git"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "keywords": [
+    "socket.io",
+    "rpc",
+    "rmi"
+  ],
+  "dependencies": {
+    "bluebird": "~2.3",
+    "lodash": "2.4.1"
+  },
+  "peerDependencies": {
+    "socket.io": "1.1.0"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "mocha": "^2.0.1",
+    "should": "^4.1.0"
+  }
 }
