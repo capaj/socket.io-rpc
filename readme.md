@@ -171,3 +171,4 @@ There are 4 internal callbacks, which might help you in case you need to be noti
 
 #TODO
 1. add Winston logging.
+2. create client for node
