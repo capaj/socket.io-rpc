@@ -18,6 +18,9 @@ app.get('/es5-shim.js', function (req, res) {
 app.get('/angular.js', function (req, res) {
     res.sendFile(__dirname + '/angular.js');
 });
+app.get('/rpc/client.js', function (req, res) {  // this is not normally needed
+	res.sendFile('client.js', sendFileOpts);
+});
 app.get('/rpc/rpc-client.js', function (req, res) {  // this is not normally needed
     res.sendFile('socket.io-rpc-client.js', sendFileOpts);
 });

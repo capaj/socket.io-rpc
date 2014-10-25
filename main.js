@@ -201,6 +201,9 @@ module.exports = function createServer(ioP, opts) {
 			var sendFileOpts = {
 				root: './'
 			};
+			app.get('/rpc/client.js', function (req, res) {
+				res.sendFile('node_modules/socket.io-rpc/client.js', sendFileOpts);
+			});
 			app.get('/rpc/rpc-client.js', function (req, res) {
 				res.sendFile('node_modules/socket.io-rpc/socket.io-rpc-client.js', sendFileOpts);
 			});

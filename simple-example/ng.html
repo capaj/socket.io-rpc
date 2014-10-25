@@ -19,83 +19,85 @@
         getTime: <span ng-bind="serverTime"></span> <button ng-click="getTime()">getTime()</button><br>
         asyncTest: {{ asyncTest }}
     </div>
+    <!--use systemjs to load angular in your production app, I was just cutting corners here-->
+    <script type="text/javascript" src="angular.js"></script>
+    <script src="jspm_packages/system.js"></script>
+    <script src="config.js"></script>
+    <script type="text/javascript">
+        System.import('rpc/rpc-client-angular').then(function(RPC) {
+            angular.module('app', ['RPC']).controller('testCtrl', function ($scope, $RPC, myChannel) {
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/angular.js"></script>
-    <script src="/rpc/rpc-client-angular.js"></script>
-    <script>
-        angular.module('app', ['RPC']).controller('testCtrl', function ($scope, $rpc, myChannel) {
-
-            myChannel.myAsyncTest('passing string as argument').then(function (retVal) {
-                console.log('server returned: ' + retVal);
-                $scope.asyncTest = retVal;
-            }, function (er) {
-                console.error(er);
-            });
-
-            myChannel.failingMethod();    // this will display error prpagated from serverside
-
-            $scope.getTime = function () {
-                myChannel.getTime().then(function (date) {
-                    console.log('time on server is: ' + date);
-                    $scope.serverTime = date;
-                    //no need to call $scope.$apply, because it is called in $rpc;
+                myChannel.myAsyncTest('passing string as argument').then(function (retVal) {
+                    console.log('server returned: ' + retVal);
+                    $scope.asyncTest = retVal;
+                }, function (er) {
+                    console.error(er);
                 });
-            };
 
-            $scope.getTime();
+                myChannel.failingMethod();    // this will display error prpagated from serverside
 
-            console.log('ctr run ' + new Date().toJSON());
+                $scope.getTime = function () {
+                    myChannel.getTime().then(function (date) {
+                        console.log('time on server is: ' + date);
+                        $scope.serverTime = date;
+                        //no need to call $scope.$apply, because it is called in $rpc;
+                    });
+                };
 
-        }).controller('secondCtrl', function($scope, myChannel) {
+                $scope.getTime();
 
-            myChannel.myAsyncTest('passing string as argument in second ctrl').then(function (retVal) {
-                console.log('server returned: ' + retVal);
-                $scope.asyncTest = retVal;
-            }, function (er) {
-                console.error(er);
-            });
+                console.log('ctr run ' + new Date().toJSON());
 
-            myChannel.failingMethod();    // this will display error prpagated from serverside
+            }).controller('secondCtrl', function($scope, myChannel) {
 
-            $scope.getTime = function () {
-                myChannel.getTime().then(function (date) {
-                    console.log('time on second controller is: ' + date);
-                    $scope.serverTime = date;
-                    //no need to call $scope.$apply, because it is called in $rpc;
+                myChannel.myAsyncTest('passing string as argument in second ctrl').then(function (retVal) {
+                    console.log('server returned: ' + retVal);
+                    $scope.asyncTest = retVal;
+                }, function (er) {
+                    console.error(er);
                 });
-            };
 
-            $scope.getTime();
+                myChannel.failingMethod();    // this will display error prpagated from serverside
 
-            console.log('ctr run ' + new Date().toJSON());
+                $scope.getTime = function () {
+                    myChannel.getTime().then(function (date) {
+                        console.log('time on second controller is: ' + date);
+                        $scope.serverTime = date;
+                        //no need to call $scope.$apply, because it is called in $rpc;
+                    });
+                };
 
-        }).run(function ($rpc, $rootScope, $timeout) {
+                $scope.getTime();
+
+                console.log('ctr run ' + new Date().toJSON());
+
+            }).run(function ($RPC, $rootScope, $timeout) {
 //            var backend1 = $rpc('http://192.168.43.44:8081');   // don't forget port, if you are not on 80
-            var backend1 = $rpc('http://localhost:8081');   // don't forget port, if you are not on 80
+                var backend1 = $RPC('http://localhost:8081');   // don't forget port, if you are not on 80
 //            var backend2 = $rpc('http://localhost:8082');   // don't forget port, if you are not on 80
-            $rootScope.authHash = function () {
-                return {passw: '123'};
-            };
-            console.log('ng run ' + new Date().toJSON());
+                $rootScope.authHash = function () {
+                    return {passw: '123'};
+                };
+                console.log('ng run ' + new Date().toJSON());
 
-            backend1.expose('clientChannel', {
-                fnOnClient: function (param) {
-                    console.log("client method called");
-					return 'whatever you need from client returned ' + param;
-                }
-            }).then(function (channel) {
-                console.log(" client channel ready");
+                backend1.expose('clientChannel', {
+                    fnOnClient: function (param) {
+                        console.log("client method called");
+                        return 'whatever you need from client returned ' + param;
+                    }
+                }).then(function (channel) {
+                    console.log(" client channel ready");
+                });
+
+                $rootScope.backend1 = backend1; //backend is not needed on scope, but it would be needed if we wanted to work
+//            $rootScope.backend2 = backend2; //backend is not needed on scope, but it would be needed if we wanted to work
+                // with multiple connections
             });
 
-            $rootScope.backend1 = backend1; //backend is not needed on scope, but it would be needed if we wanted to work
-//            $rootScope.backend2 = backend2; //backend is not needed on scope, but it would be needed if we wanted to work
-            // with multiple connections
+            var injector = angular.bootstrap(document, ['app']);
         });
-
-        var injector = angular.bootstrap(document, ['app']);
-
     </script>
+
 </body>
 
 </html>

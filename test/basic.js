@@ -26,7 +26,7 @@ describe("simple remote channel",function(){
 	});
 
 	it('should reject a promise returned by calling a failingMethod', function(done){
-
+		this.timeout(5000);
 		channel.failingMethod().catch(function(err) {
 			err.should.eql('Error: Sample error');
 			done();

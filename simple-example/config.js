@@ -8,7 +8,7 @@ System.config({
 
 System.config({
   "map": {
-    "socket.io-client": "/socket.io/socket.io.js",
+    "socket.io-client": "/socket.io/socket.io",
     "bluebird": "npm:bluebird/js/browser/bluebird",
     "npm:bluebird": "npm:bluebird@^2.3.6",
     "npm:bluebird@2.3.6": {},
