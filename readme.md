@@ -9,7 +9,7 @@ Has two client libraries-one for general use, other for AngularJS.
 Angular.js lib contains special rpc-controller directive, which when compiled asynchronously loads server channel and instantiates classic angular controller when this channel is ready.
 
 #Simple example
-Folder with example can be run by running:
+Folder with example can be run after installing all dependencies like this:
 
     npm install
     jspm install
