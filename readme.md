@@ -151,28 +151,12 @@ Folder with example can be run by running:
 
 ###With authentication (server)
 
-    localRPC.expose('myChannel', {
-        ...
-    },
-        function (handshake, callback) {
-            console.dir(handshake);
-            if (handshake.pswd === 'super secret password') {   //or any other kind of logic you need
-                callback(true);
-            } else {
-                callback(false);
-            }
-        }
-    );
+Set authentication normally as you would with [socket.io](http://socket.io/docs/migrating-from-0-9/#authentication-differences).
 
 
 ###With authentication (browser)
 
-    localRPC.loadChannel('myChannel', { pswd: "super secret password" }).then(
-        function (channel) {
-           ...
-        }
-    );
-
+Send your auth token with the backend connect method(the one that is exported from the module/angular factory).
 
 ## Browser support
     numbers are for both clients(vanilla and Angular):
