@@ -59,7 +59,7 @@ Then run it from git repo root:
 ```
 
 ###In browser
-```javascript
+```html
     //since it is desirable to be able to run the same code in node.js as in the browser, we use systemjs to load commonJS module into the browser
     <script src="jspm_packages/system.js"></script>
     <script src="config.js"></script> //needs to have bluebird and socket.io-client, look into simple_example folder
@@ -107,24 +107,23 @@ Then run it from git repo root:
     </script>
 ```
 ###In browser for AngularJS
-```javascript
+```html
     <body>
         <h1>Angular socket.io-rpc test/showcase</h1>
-        <!--You can also use regular ng-controller, but then you have to load channel yourself by calling
-        $rpc.loadChannel('myChannel'); inside it-->
+        <!--You can also use regular ng-controller, but then you have to load channel yourself by calling $rpc.loadChannel('myChannel'); inside it-->
         <div rpc-controller="testCtrl" rpc-channel="myChannel">
             getTime: <span ng-bind="serverTime"></span><br>
             asyncTest: {{ asyncTest }}
         </div>
 
     </body>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="http://code.angularjs.org/1.3.0/angular.js"></script>
-    <script src="/rpc/rpc-client-angular.js"></script>
-    <script>
-        angular.module('app', ['RPC'])
-            .controller('testCtrl',
-            function ($scope, myChannel) {
+     <script type="text/javascript" src="angular.js"></script>
+       <script src="jspm_packages/system.js"></script>
+       <script src="config.js"></script>
+       <script type="text/javascript">
+           System.import('rpc/rpc-client-angular').then(function(RPC) {
+                angular.module('app', ['RPC']).controller('testCtrl', function ($scope, myChannel) {
+
                 myChannel.getTime().then(function (date) {
                     console.log('time on server is: ' + date);
                     $scope.serverTime = date;
