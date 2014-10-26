@@ -3,5 +3,5 @@ var noop = function(){};
 
 var injectableFn = require('./client');
 
-//this was we fake angular's injection process and get our client which works outside angular
+//we are faking angular's injection process and from the function, our client is returned asme way s when Angular instantiates it
 module.exports = injectableFn({$apply: noop}, console, Promise);
