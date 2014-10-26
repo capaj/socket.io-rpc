@@ -5,19 +5,27 @@ Main purpose is to make it more easier to structure your code for browser-server
 
 With socket.io-rpc, you just expose a channel of functions and then call those as if they were regular async functions defined on your side, socket.io-rpc automatically resolves a promise on other side, when function returns or returned promise is resolved. It even propagates errors(thrown and returned), so you get error handling almost for free.
 
-Has two client libraries-one for general use, other for AngularJS.
+Has three client libraries:
+* for browser
+* for AngularJS
+* for node
+
+All libraries are written in commonJS module style, so you need to use SystemJS loader to be able to use them in the browser.
 Angular.js lib contains special rpc-controller directive, which when compiled asynchronously loads server channel and instantiates classic angular controller when this channel is ready.
 
 #Simple example
-Folder with example can be run after installing all dependencies like this:
+Folder with example can be run after installing all dependencies like this in the simple-example folder:
 
     npm install
     jspm install
-    node server
+    
+Then run it from git repo root:
+    node simple-example/server
 
 ## Usage example
 
-###Serverside
+###Serverside server
+```javascript
     var io = require('socket.io').listen(server);
     // you should be able to use any other http://promises-aplus.github.io/promises-spec/ compliant library, but I would greatly recommend using bluebird
     var Promise = require('bluebird');
@@ -48,9 +56,10 @@ Folder with example can be run after installing all dependencies like this:
         });
 
     });
-
+```
 
 ###In browser
+```javascript
     //since it is desirable to be able to run the same code in node.js as in the browser, we use systemjs to load commonJS module into the browser
     <script src="jspm_packages/system.js"></script>
     <script src="config.js"></script> //needs to have bluebird and socket.io-client, look into simple_example folder
@@ -96,9 +105,9 @@ Folder with example can be run after installing all dependencies like this:
             });
         });
     </script>
-
+```
 ###In browser for AngularJS
-
+```javascript
     <body>
         <h1>Angular socket.io-rpc test/showcase</h1>
         <!--You can also use regular ng-controller, but then you have to load channel yourself by calling
@@ -147,7 +156,7 @@ Folder with example can be run after installing all dependencies like this:
         var injector = angular.bootstrap(document, ['app']);
 
     </script>
-
+```
 
 ###With authentication (server)
 
