@@ -134,23 +134,21 @@ Then run it from git repo root:
                     $scope.asyncTest = retVal;
                 });
                 console.log('ctr ' + new Date().toJSON());
-            }
-        ).run(
-        	function ($rpc, $rootScope) {
-                var localRPC = $rpc('http://localhost:8080');   // don't forget port, if you are not on 80
-                console.log('run ' + new Date().toJSON());
-
-                localRPC.expose('clientChannel', {
-					fnOnClient: function (param) {
-						return 'whatever you need from client returned ' + param;
-					}
-				}).then(
-					function (channel) {
-						console.log(" client channel ready");
-					}
-				);
-            }
-		);
+           }).run(
+               function ($rpc, $rootScope) {
+                   var localRPC = $rpc('http://localhost:8080');   // don't forget port, if you are not on 80
+                   console.log('run ' + new Date().toJSON());
+                       localRPC.expose('clientChannel', {
+                       fnOnClient: function (param) {
+                           return 'whatever you need from client returned ' + param;
+                       }
+                   }).then(
+                       function (channel) {
+                           console.log(" client channel ready");
+                       }
+                   );
+               }
+           );
 
         var injector = angular.bootstrap(document, ['app']);
 
@@ -169,8 +167,8 @@ Send your auth token with the backend connect method(the one that is exported fr
 ## Browser support
     numbers are for both clients(vanilla and Angular):
     IE	FIREFOX	SAFARI	CHROME	OPERA	IPHONE	ANDROID
-    8.0+	3.5+	4.0+	4.0+	10.5+	2.0+	2.0+
-    note: ES5-shim is required in order for socket.io-rpc to work under non ES5 environments such as IE8
+    9.0+	3.5+	4.0+	4.0+	10.5+	2.0+	2.0+
+
 
 ## Internal callbacks on client
 There are 4 internal callbacks, which might help you in case you need to be notified of a request beginning and ending:
@@ -181,5 +179,5 @@ There are 4 internal callbacks, which might help you in case you need to be noti
     onEnd           //called when one call is returned
 
 #TODO
-1. add Winston logging.
-2. create client for node
+1. use Winston logging instead of vanilla console
+
