@@ -1,4 +1,6 @@
 ## ChangeLog
+###0.6.9 -> 0.7.0
+Now only usable with commonJS compatible module loader. I strongly advise to use systemJS module loader in the browser.
 ###0.5.4 -> 0.6.0
 More reasonable public API refactor, which now requires you to connect before you can load channels
 ###0.3.18 -> 0.3.19
