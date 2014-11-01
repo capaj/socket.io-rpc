@@ -1,3 +1,4 @@
+var angular = require('angular');
 /**
  * factory which returns a connect function
  */
