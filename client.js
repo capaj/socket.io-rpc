@@ -287,7 +287,7 @@ module.exports = function ($rootScope, $log, $q) {
 					if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {
 
 						var retVal = exposed[data.fnName].apply(this, data.args);
-						if (typeof retVal.then === 'function') {
+						if (typeof retVal === 'object' && typeof retVal.then === 'function') {
 							//async - promise must be returned in order to be treated as async
 							retVal.then(function (asyncRetVal) {
 								socket.emit('resolve', { Id: data.Id, value: asyncRetVal });
