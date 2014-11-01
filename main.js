@@ -4,7 +4,7 @@ var _ = require('lodash');
 /**
  * @param {Manager} ioP socket.io manager instance returned by require('socket.io').listen(server);
  * @param {Express|Object} [opts] either an object which will extend default options or express app
- * @returns {{getSocketFor: Function, expose: Function, loadClientChannel: Function}} rpc backend instance
+ * @returns {{getSocketFor: Function, expose: Function, loadClientChannel: Function, masterChannel: Object}} rpc backend instance
  */
 module.exports = function createServer(ioP, opts) {
 
