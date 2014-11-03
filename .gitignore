@@ -1,5 +1,6 @@
 tests/node_modules/
 node_modules/
+jspm_packages/
 simple-example/node_modules
 simple-example/jspm_packages
 
