@@ -10,7 +10,7 @@ System.config({
   "map": {
     "angular": "github:angular/bower-angular@^1.3.1",
     "bluebird": "npm:bluebird/js/browser/bluebird",
-    "npm:bluebird": "npm:bluebird@^2.3.6",
+    "npm:bluebird": "npm:bluebird@^2.3.10",
     "socket.io-client": "/socket.io/socket.io",
     "github:jspm/nodelibs@0.0.5": {
       "Base64": "npm:Base64@^0.2.0",

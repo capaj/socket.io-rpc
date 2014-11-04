@@ -21,6 +21,8 @@
     </div>
     <script src="jspm_packages/system.js"></script>
     <script src="config.js"></script>
+    <!--include the minified bundle in production, where every bit counts-->
+    <!--<script src="/rpc/rpc-client-angular-bundle.js"></script>-->
     <script type="text/javascript">
         System.import('rpc/rpc-client-angular').then(function(RPC) {
             angular.module('app', ['RPC']).controller('testCtrl', function ($scope, $RPC, myChannel) {
@@ -32,7 +34,7 @@
                     console.error(er);
                 });
 
-                myChannel.failingMethod();    // this will display error prpagated from serverside
+                myChannel.failingMethod();    // this will display error propagated from serverside
 
                 $scope.getTime = function () {
                     myChannel.getTime().then(function (date) {

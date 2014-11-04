@@ -12,11 +12,8 @@ var sendFileOpts = {
 app.use(express.static(__dirname));
 
 // this block is not normally needed, only we don't have these installed through NPM for tests, so paths differ
-app.get('/es5-shim.js', function (req, res) {
-    res.sendFile(__dirname + 'es5-shim.js');
-});
-app.get('/angular.js', function (req, res) {
-    res.sendFile(__dirname + '/angular.js');
+app.get('/rpc/rpc-client-angular-bundle.js', function (req, res) {  // this is not normally needed
+	res.sendFile('dist/rpc-client-angular-bundle.js', sendFileOpts);
 });
 app.get('/rpc/client.js', function (req, res) {  // this is not normally needed
 	res.sendFile('client.js', sendFileOpts);

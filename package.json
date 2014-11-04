@@ -1,6 +1,6 @@
 {
   "name": "socket.io-rpc",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "private": false,
   "author": "capaj <capajj@gmail.com>",
   "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
@@ -32,7 +32,9 @@
   "devDependencies": {
     "mocha": "^2.0.1",
     "should": "^4.1.0",
-    "systemjs-builder": "^0.2.8"
+    "systemjs-builder": "^0.2.8",
+    "grunt-contrib-uglify": "~0.5",
+    "grunt-ng-annotate": "~0.4"
   },
   "jspm": {
     "name": "moonridge",

@@ -6,7 +6,7 @@ var _ = require('lodash');
  * @param {Express|Object} [opts] either an object which will extend default options or express app
  * @returns {{getSocketFor: Function, expose: Function, loadClientChannel: Function, masterChannel: Object}} rpc backend instance
  */
-module.exports = function createServer(ioP, opts) {
+function createServer(ioP, opts) {
 
 	var runDate = new Date();
 	var io;
@@ -201,14 +201,17 @@ module.exports = function createServer(ioP, opts) {
 			var sendFileOpts = {
 				root: './'
 			};
-			app.get('/rpc/client.js', function (req, res) {
+			app.get('/rpc/client.js', function (req, res) {	//raw client, do not use this unless you know what you are doing
 				res.sendFile('node_modules/socket.io-rpc/client.js', sendFileOpts);
 			});
-			app.get('/rpc/rpc-client.js', function (req, res) {
+			app.get('/rpc/rpc-client.js', function (req, res) {	//normal browser client
 				res.sendFile('node_modules/socket.io-rpc/socket.io-rpc-client.js', sendFileOpts);
 			});
-			app.get('/rpc/rpc-client-angular.js', function (req, res) {
+			app.get('/rpc/rpc-client-angular.js', function (req, res) {	//angular client
 				res.sendFile('node_modules/socket.io-rpc/socket.io-rpc-client-angular.js', sendFileOpts);
+			});
+			app.get('/rpc/rpc-client-angular-bundle.js', function (req, res) { //client with angular bundled and minified
+				res.sendFile('node_modules/socket.io-rpc/dist/rpc-client-angular-bundle.js', sendFileOpts);
 			});
 
 		} else {
@@ -350,4 +353,8 @@ module.exports = function createServer(ioP, opts) {
 	);
 
 	return rpcInstance;
-};
+}
+
+createServer.client = require('./socket.io-rpc-client-node');
+
+module.exports = createServer;
