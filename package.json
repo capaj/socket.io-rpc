@@ -33,7 +33,7 @@
     "mocha": "^2.0.1",
     "should": "^4.1.0",
     "systemjs-builder": "^0.2.8",
-    "grunt-contrib-uglify": "~0.5",
+    "grunt-contrib-uglify": "~0.6",
     "grunt-ng-annotate": "~0.4"
   },
   "jspm": {
