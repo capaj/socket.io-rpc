@@ -137,6 +137,12 @@ function createServer(ioP, opts) {
 
 	var rpcInstance = {
 		/**
+		 * @returns {object} has of all channels
+		 */
+		get channels() {
+			return serverChannels;
+		},
+		/**
 		 *  Makes a channel available for clients
 		 * @param {String} name
 		 * @param {Object} toExpose
