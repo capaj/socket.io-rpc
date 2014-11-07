@@ -4,7 +4,7 @@ var _ = require('lodash');
 /**
  * @param {Manager} ioP socket.io manager instance returned by require('socket.io').listen(server);
  * @param {Express|Object} [opts] either an object which will extend default options or express app
- * @returns {{getSocketFor: Function, expose: Function, loadClientChannel: Function, masterChannel: Object}} rpc backend instance
+ * @returns {{expose: Function, loadClientChannel: Function, masterChannel: Object}} rpc backend instance
  */
 function createServer(ioP, opts) {
 
@@ -44,11 +44,10 @@ function createServer(ioP, opts) {
 	/**
 	 * @param {String} name
 	 * @param {Object} toExpose
-	 * @param {Function} [authFn] should return boolean value, if true access to a channel is allowed
 	 * @returns {RpcChannel}
 	 * @constructor
 	 */
-	var RpcChannel = function (name, toExpose, authFn) {      //
+	var RpcChannel = function (name, toExpose) {      //
 		this.fns = toExpose;
 
 		/**
@@ -138,30 +137,19 @@ function createServer(ioP, opts) {
 
 	var rpcInstance = {
 		/**
-		 * @param {String} name
-		 * @returns {undefined|socket}
-		 */
-		getSocketFor: function(name) {
-			if (serverChannels[name]) {
-				return serverChannels[name]._socket;
-			}
-		},
-		/**
 		 *  Makes a channel available for clients
 		 * @param {String} name
 		 * @param {Object} toExpose
-		 * @param {Function} [authFn] when provided, channel will call it on any new connected client
 		 * @returns {rpcInstance}
 		 */
-		expose: function (name, toExpose, authFn) {
+		expose: function (name, toExpose) {
 			if (serverChannels[name]) {
 				console.warn("This channel name(" + name + ") is already exposed-ignoring the command.");
 			} else {
-				var channel = new RpcChannel(name, toExpose, authFn);
-				if (toExpose._socket) {
-					throw new Error('Failed to expose channel, _socket property is reserved for socket namespace');
+				if (toExpose._socket || toExpose._loadDef || toExpose._connected) {
+					throw new Error('Failed to expose channel, some property is reserved for socket namespace');
 				}
-				serverChannels[name] = channel;
+				serverChannels[name] = new RpcChannel(name, toExpose);
 			}
 			return rpcInstance;
 		},
@@ -212,6 +200,9 @@ function createServer(ioP, opts) {
 			});
 			app.get('/rpc/rpc-client-angular-bundle.js', function (req, res) { //client with angular bundled and minified
 				res.sendFile('node_modules/socket.io-rpc/dist/rpc-client-angular-bundle.js', sendFileOpts);
+			});
+			app.get('/rpc/rpc-client-angular-bundle.min.js', function (req, res) {  // this is not normally needed
+				res.sendFile('node_modules/socket.io-rpc/dist/rpc-client-angular-bundle.min.js', sendFileOpts);
 			});
 
 		} else {

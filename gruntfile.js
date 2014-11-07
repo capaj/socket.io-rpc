@@ -1,9 +1,10 @@
 module.exports = function (grunt) {
+
     grunt.initConfig({
         ngAnnotate: {
             app: {
-                src: './built/moonridge-angular-client.js',
-                dest: './built/moonridge-angular-client-annotated.js'
+                src: './dist/rpc-client-angular-bundle.js',
+                dest: './dist/rpc-client-angular-bundle.annotated.js'
             }
         },
         uglify: {
@@ -16,6 +17,7 @@ module.exports = function (grunt) {
     });
 
     grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-ng-annotate');
 
     grunt.registerTask('default', ['ngAnnotate', 'uglify']);
 

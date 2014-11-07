@@ -112,8 +112,9 @@ module.exports = function ($rootScope, $log, $q) {
 				knownTemplates[data.tplId].forEach(remoteMethodInvocation); //this has to be initialized from known template
 			}
 
-
 			channel._loadDef.resolve(channel);
+			channel._connected = true;
+
 			if (storeInCache !== false) {
 				$rootScope.$apply();
 				data.cDate = new Date();    // here we make a note of when the channel cache was saved
@@ -155,7 +156,7 @@ module.exports = function ($rootScope, $log, $q) {
 				})
 				.on('disconnect', function (data) {
 					reconDfd = $q.defer();
-
+					channel._connected = false;
 					channel._loadDef = reconDfd;
 					$log.warn("Server channel " + name + " disconnected.");
 				})

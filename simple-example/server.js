@@ -11,9 +11,12 @@ var sendFileOpts = {
 };
 app.use(express.static(__dirname));
 
-// this block is not normally needed, only we don't have these installed through NPM for tests, so paths differ
+// this block is not normally needed, only we don't have these installed through NPM for tests, so paths are different
 app.get('/rpc/rpc-client-angular-bundle.js', function (req, res) {  // this is not normally needed
 	res.sendFile('dist/rpc-client-angular-bundle.js', sendFileOpts);
+});
+app.get('/rpc/rpc-client-angular-bundle.min.js', function (req, res) {  // this is not normally needed
+	res.sendFile('dist/rpc-client-angular-bundle.min.js', sendFileOpts);
 });
 app.get('/rpc/client.js', function (req, res) {  // this is not normally needed
 	res.sendFile('client.js', sendFileOpts);
@@ -24,7 +27,7 @@ app.get('/rpc/rpc-client.js', function (req, res) {  // this is not normally nee
 app.get('/rpc/rpc-client-angular.js', function (req, res) {  // this is not normally needed
     res.sendFile('socket.io-rpc-client-angular.js', sendFileOpts);
 });
-
+//en of the unusual block
 
 var Promise = require('bluebird');
 var rpc = require('../main.js');
