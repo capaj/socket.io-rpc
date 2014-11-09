@@ -179,5 +179,6 @@ There are 4 internal callbacks, which might help you in case you need to be noti
     onEnd           //called when one call is returned
 
 #TODO
-1. use Winston logging instead of vanilla console
+1. generate commonJS compatible definitions for channels, so that you are able to require channel with simple require from node or in browser with systemJS. This feature is gona rock!
+2. use Winston logging instead of vanilla console
 
