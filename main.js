@@ -1,12 +1,12 @@
 var Promise = require('bluebird');
 var _ = require('lodash');
-
+var path = require('path');
 /**
  * @param {Manager} ioP socket.io manager instance returned by require('socket.io').listen(server);
- * @param {Express|Object} [opts] either an object which will extend default options or express app
+ * @param {Express} expApp express app
  * @returns {{expose: Function, loadClientChannel: Function, masterChannel: Object}} rpc backend instance
  */
-function createServer(ioP, opts) {
+function createServer(ioP, expApp) {
 
 	var runDate = new Date();
 	var io;
@@ -16,7 +16,7 @@ function createServer(ioP, opts) {
 	var channelTemplatesSize = 0;
 	var clientKnownChannels = {};
 
-	var options = { channelTemplates: true };        //object of options which is fed input on createServer method call
+
 	var deferreds = [];
 	var serverChannels = {};
 	var clientChannels = {};
@@ -60,7 +60,6 @@ function createServer(ioP, opts) {
 		}
 		Object.freeze(toExpose);    //we won't support adding new methods to a channel after creation
 
-		if (options.channelTemplates) {
 
 			for (var tplId in channelTemplates) {
 				if (_.isEqual(channelTemplates[tplId], this.fnNames)) {
@@ -74,7 +73,7 @@ function createServer(ioP, opts) {
 				this.tplId = index;
 			}
 
-		}
+
 
 		this._socket = io.of('/rpc-' + name);
 
@@ -143,19 +142,30 @@ function createServer(ioP, opts) {
 			return serverChannels;
 		},
 		/**
-		 *  Makes a channel available for clients
-		 * @param {String} name
-		 * @param {Object} toExpose
+		 *  Makes a hash of functions available for client's consumption
+		 * @param {String} mPath to the module you want to require on the client side
 		 * @returns {rpcInstance}
 		 */
-		expose: function (name, toExpose) {
-			if (serverChannels[name]) {
-				console.warn("This channel name(" + name + ") is already exposed-ignoring the command.");
+		expose: function (mPath) {
+			var fromRoot = path.relative(__dirname, module.filename);
+			var fns = require(mPath);
+
+			expApp.get(mPath, function (req, res){
+				res.type('application/javascript; charset=utf-8');
+				var clSideScript = 'var fns = ' + JSON.stringify(fns) + '\n' + '' +
+					'var chnl = require("/rpc/prepare-channel")(fns) \n' +
+					'module.exports = chnl;';
+        res.send(clSideScript);
+				res.end();
+			});
+
+			if (serverChannels[mPath]) {
+				console.warn("This channel name(" + mPath + ") is already exposed-ignoring the command.");
 			} else {
 				if (toExpose._socket || toExpose._loadDef || toExpose._connected) {
 					throw new Error('Failed to expose channel, some property is reserved for socket namespace');
 				}
-				serverChannels[name] = new RpcChannel(name, toExpose);
+				serverChannels[mPath] = new RpcChannel(mPath, toExpose);
 			}
 			return rpcInstance;
 		},
@@ -189,34 +199,20 @@ function createServer(ioP, opts) {
 	};
 
 
-	if (opts) {
-		var app = opts.expressApp || opts;
-		if (app.get) {
-			var sendFileOpts = {
-				root: './'
-			};
-			app.get('/rpc/client.js', function (req, res) {	//raw client, do not use this unless you know what you are doing
-				res.sendFile('node_modules/socket.io-rpc/client.js', sendFileOpts);
-			});
-			app.get('/rpc/rpc-client.js', function (req, res) {	//normal browser client
-				res.sendFile('node_modules/socket.io-rpc/socket.io-rpc-client.js', sendFileOpts);
-			});
-			app.get('/rpc/rpc-client-angular.js', function (req, res) {	//angular client
-				res.sendFile('node_modules/socket.io-rpc/socket.io-rpc-client-angular.js', sendFileOpts);
-			});
-			app.get('/rpc/rpc-client-angular-bundle.js', function (req, res) { //client with angular bundled and minified
-				res.sendFile('node_modules/socket.io-rpc/dist/rpc-client-angular-bundle.js', sendFileOpts);
-			});
-			app.get('/rpc/rpc-client-angular-bundle.min.js', function (req, res) {  // this is not normally needed
-				res.sendFile('node_modules/socket.io-rpc/dist/rpc-client-angular-bundle.min.js', sendFileOpts);
-			});
-
-		} else {
-			console.warn('you should provide express app or an object with express app on property expressApp');
-		}
-		if (!_.isFunction(opts)) {
-			_.extend(options, opts);
-		}
+	var sendFileOpts = {
+		root: './'
+	};
+	var fileMap = {
+		'/rpc/client.js': 'node_modules/socket.io-rpc/client.js', //raw client, do not use this unless you know what you are doing
+		'/rpc/rpc-client.js': 'node_modules/socket.io-rpc/socket.io-rpc-client.js', //normal browser client
+		'/rpc/rpc-client-angular.js': 'node_modules/socket.io-rpc/socket.io-rpc-client-angular.js', //angular client
+		'/rpc/rpc-client-angular-bundle.js': 'node_modules/socket.io-rpc/dist/rpc-client-angular-bundle.js', //client with angular bundled and minified
+		'/rpc/rpc-client-angular-bundle.min.js': 'node_modules/socket.io-rpc/dist/rpc-client-angular-bundle.min.js' // this is not normally needed
+	};
+	for (var serverPath in fileMap) {
+		expApp.get(serverPath, function(req, res) {
+			res.sendFile(fileMap[serverPath], sendFileOpts);
+		});
 	}
 
 	io = ioP;
@@ -276,16 +272,14 @@ function createServer(ioP, opts) {
 							socket.emit('channelFns', {name: data.name, upToDate: true});
 						} else {
 							var channelFnPayload;
-							if (options.channelTemplates) {
+
 								if (clientKnownChannels[socket.id].indexOf(channel.tplId) !== -1) {
 									channelFnPayload = {name: data.name, tplId: channel.tplId}; //channel template is known to the client
 								} else {
 									channelFnPayload = {name: data.name, fnNames: channel.fnNames, tplId: channel.tplId};
 									clientKnownChannels[socket.id].push(channel.tplId);
 								}
-							} else {
-								channelFnPayload = {name: data.name, fnNames: channel.fnNames};
-							}
+
 							socket.emit('channelFns', channelFnPayload);
 						}
 					} else {

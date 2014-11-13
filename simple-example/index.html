@@ -11,55 +11,8 @@ asyncTest: <span id="asyncText"></span>
 <script src="jspm_packages/system.js"></script>
 <script src="config.js"></script>
 <script type="text/javascript">
-    System.import('rpc/rpc-client').then(function(RPC) {
-        console.log("rpc client loaded");
+    System.import('browser-main').then(function(RPC) {
 
-        var backend = RPC('http://localhost:8081');
-        backend.loadChannel('myChannel')
-                .then(function(channel) {
-                    channel.getTime().then(function(date) {
-                        console.log('time on server is: ' + date);
-                        setText(document.getElementById('serverTime'), date);
-
-                    });
-                    channel.myAsyncTest('passing string as argument').then(function(retVal) {
-                        console.log('server returned: ' + retVal);
-                        setText(document.getElementById('asyncText'), retVal);
-                    }, function(er) {
-                        console.error('error callback called');
-                    });
-                    channel.failingMethod().catch(function(err) {
-                        console.error(err);
-                        //without this empty callback bluebird laments about unhandled error
-                    });    // this will display error prpagated from serverside
-                    channel._socket.on('disconnect', function() {
-                        console.log("channel disconnected!");
-                    });
-
-
-                    //channel.nonExistentRemoteFn();  // uncomment for typerror to be thrown and handled by otherwise promise method
-                }, function(err) {
-                    console.log(err + ' equals TypeError: Object #<Object> has no method nonExistentRemoteFn');
-                });
-
-        backend.expose('clientChannel', {
-            fnOnClient: function(param) {
-                return 'whatever you need from client returned ' + param;
-            }
-        }).then(function(channel) {
-                    console.log(" client channel ready");
-                }, function(err) {
-                    debugger;
-                }
-        );
-
-        function setText(elem, changeVal) {
-            if ((elem.textContent) && (typeof (elem.textContent) != "undefined")) {
-                elem.textContent = changeVal;
-            } else {
-                elem.innerText = changeVal;
-            }
-        }
     }, function(e) {
         setTimeout(function() {
             console.error(e);

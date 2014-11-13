@@ -27,36 +27,15 @@ app.get('/rpc/rpc-client.js', function (req, res) {  // this is not normally nee
 app.get('/rpc/rpc-client-angular.js', function (req, res) {  // this is not normally needed
     res.sendFile('socket.io-rpc-client-angular.js', sendFileOpts);
 });
-//en of the unusual block
+//end of the unusual block
 
-var Promise = require('bluebird');
 var rpc = require('../main.js');
 var io = require('socket.io').listen(server);
 						//channelTemplates true is default, though you can change it, I would recommend leaving it to true,
 						//				   false is good only when your channels are dynamic so there is no point in caching
-var rpcMaster = rpc(io, {channelTemplates: true, expressApp: app})
-	.expose('myChannel', {
-		//plain JS function
-		getTime: function() {
-			console.log('Client ID is: ' + this.id);
-			return new Date();
-		},
-		//returns a promise, which when resolved will resolve promise on client-side with the result
-		myAsyncTest: function(param) {
-			var deffered = Promise.defer();
-			setTimeout(function() {
-				deffered.resolve("String generated asynchronously serverside with " + param);
-			}, 1000);
-			return deffered.promise;
-		},
-		failingMethod: function() {
-			var deffered = Promise.defer();
-			setTimeout(function() {
-				deffered.reject(new Error("Sample error"));
-			}, 2000);
-			return deffered.promise;
-		}
-	}, function(handshake, CB) {	//second function/parameter is optional for authenticated channels
+
+var rpcMaster = rpc(io, app)
+	.expose('./rpc_channel_test', function(handshake, CB) {	//second function/parameter is optional for authenticated channels
 		if (handshake.passw == '123') {
 			CB(true);
 		} else {
