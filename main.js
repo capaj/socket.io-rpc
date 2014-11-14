@@ -147,12 +147,12 @@ function createServer(ioP, expApp) {
 		 * @returns {rpcInstance}
 		 */
 		expose: function (mPath) {
-			var fromRoot = path.relative(__dirname, module.filename);
-			var fns = require(mPath);
-
+			var toModule = path.join(path.dirname(module.parent.filename), mPath);
+			var exposedObj = require(toModule);
+			var fnNames = Object.keys(exposedObj);
 			expApp.get(mPath, function (req, res){
 				res.type('application/javascript; charset=utf-8');
-				var clSideScript = 'var fns = ' + JSON.stringify(fns) + '\n' + '' +
+				var clSideScript = 'var fns = ' + JSON.stringify(fnNames) + '\n' + '' +
 					'var chnl = require("/rpc/prepare-channel")(fns) \n' +
 					'module.exports = chnl;';
         res.send(clSideScript);
