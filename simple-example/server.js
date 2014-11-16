@@ -12,20 +12,25 @@ var sendFileOpts = {
 app.use(express.static(__dirname));
 
 // this block is not normally needed, only we don't have these installed through NPM for tests, so paths are different
+app.get('/rpc/client.js', function (req, res) {  // this is not normally needed
+    res.sendFile('client/client.js', sendFileOpts);
+});
 app.get('/rpc/rpc-client-angular-bundle.js', function (req, res) {  // this is not normally needed
 	res.sendFile('dist/rpc-client-angular-bundle.js', sendFileOpts);
 });
 app.get('/rpc/rpc-client-angular-bundle.min.js', function (req, res) {  // this is not normally needed
 	res.sendFile('dist/rpc-client-angular-bundle.min.js', sendFileOpts);
 });
-app.get('/rpc/client.js', function (req, res) {  // this is not normally needed
-	res.sendFile('client.js', sendFileOpts);
-});
-app.get('/rpc/rpc-client.js', function (req, res) {  // this is not normally needed
-    res.sendFile('socket.io-rpc-client.js', sendFileOpts);
+
+app.get('/rpc/socket.io-rpc-client.js', function (req, res) {  // this is not normally needed
+    res.sendFile('client/socket.io-rpc-client.js', sendFileOpts);
 });
 app.get('/rpc/rpc-client-angular.js', function (req, res) {  // this is not normally needed
-    res.sendFile('socket.io-rpc-client-angular.js', sendFileOpts);
+    res.sendFile('client/socket.io-rpc-client-angular.js', sendFileOpts);
+});
+
+app.get('/rpc/export-channel.js', function (req, res) {  // this is not normally needed
+    res.sendFile('client/export-channel.js', sendFileOpts);
 });
 //end of the unusual block
 
@@ -41,7 +46,8 @@ var rpcMaster = rpc(io, app)
 		} else {
 			CB(false);
 		}
-	});
+	})
+  .expose('./channelDeep/deep2/channelDeep');
 
 io.sockets.on('connection', function (socket) {
     var intId;

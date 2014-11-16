@@ -1,7 +1,6 @@
 var myChannel = require('./rpc_channel_test.js');
 require('angular');
 
-
 angular.module('app', []).controller('testCtrl', function ($scope) {
 
   myChannel.myAsyncTest('passing string as argument').then(function (retVal) {

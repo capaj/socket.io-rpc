@@ -24,9 +24,7 @@
     <!--include the minified bundle in production, where every bit counts-->
     <script src="/rpc/rpc-client-angular-bundle.min.js"></script>
     <script type="text/javascript">
-        System.import('rpc/rpc-client-angular').then(function() {
-
-
+        System.import('ng-main').then(function() {
             var injector = angular.bootstrap(document, ['app']);
         });
     </script>

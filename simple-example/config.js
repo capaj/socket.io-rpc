@@ -2,15 +2,17 @@ System.config({
   "paths": {
     "*": "*.js",
     "npm:*": "jspm_packages/npm/*.js",
-    "github:*": "jspm_packages/github/*.js"
+    "github:*": "jspm_packages/github/*.js",
+    "rpc:*": "/rpc/*.js"
   }
 });
 
 System.config({
   "map": {
+    "client.js": "/rpc/client.js",
     "angular": "github:angular/bower-angular@^1.3.1",
     "bluebird": "npm:bluebird/js/browser/bluebird",
-    "npm:bluebird": "npm:bluebird@^2.3.10",
+    "npm:bluebird": "npm:bluebird@^2.3.11",
     "socket.io-client": "/socket.io/socket.io",
     "github:jspm/nodelibs@0.0.5": {
       "Base64": "npm:Base64@^0.2.0",
@@ -24,7 +26,7 @@ System.config({
     },
     "npm:Base64@0.2.1": {},
     "npm:base64-js@0.0.4": {},
-    "npm:bluebird@2.3.10": {},
+    "npm:bluebird@2.3.11": {},
     "npm:bluebird@2.3.6": {},
     "npm:ieee754@1.1.4": {},
     "npm:inherits@2.0.1": {},
@@ -44,7 +46,7 @@ System.config({
     "github:systemjs/plugin-json": "0.1.0",
     "npm:Base64": "0.2.1",
     "npm:base64-js": "0.0.4",
-    "npm:bluebird": "2.3.10",
+    "npm:bluebird": "2.3.11",
     "npm:ieee754": "1.1.4",
     "npm:inherits": "2.0.1",
     "npm:json": "9.0.1",

@@ -1,9 +1,9 @@
-var rpcClient = require('../socket.io-rpc-client-node.js');
+var rpcClient = require('../client/socket.io-rpc-client-node.js');
 // although when you install from npm, your path shoud be more like: ./node_modules/socket.io-rpc/socket.io-rpc-client-node.js
 
 var backend = rpcClient('http://localhost:8081');
 
-backend.loadChannel('myChannel')
+backend.loadChannel('./rpc_channel_test')
 	.then(function(channel) {
 		channel.getTime().then(function(date) {
 			console.log('time on server is: ' + date);

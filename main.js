@@ -73,9 +73,7 @@ function createServer(ioP, expApp) {
 				this.tplId = index;
 			}
 
-
-
-		this._socket = io.of('/rpc-' + name);
+		this._socket = io.of('/rpc/' + name);
 
 		this._socket.on('connection', function (socket) {
 			var invocationRes = function (data) {
@@ -147,25 +145,37 @@ function createServer(ioP, expApp) {
 		 * @returns {rpcInstance}
 		 */
 		expose: function (mPath) {
-			var toModule = path.join(path.dirname(module.parent.filename), mPath);
-			var exposedObj = require(toModule);
+			var stack = new Error().stack;
+
+			var callerFile = stack.split('\n')[2].match(/\(.*\)/g)[0];
+			callerFile = callerFile.substr(1, callerFile.indexOf('.js') + 2);
+
+			var absToModule = path.join(path.dirname(callerFile), mPath);
+      var toModule = path.relative('./', absToModule).split(path.sep);		//relative to the execution context
+			var exposedObj = require(absToModule);
 			var fnNames = Object.keys(exposedObj);
-			expApp.get(mPath, function (req, res){
+
+			var url = '/' + toModule.join('/') + '.js';
+      expApp.get(url, function (req, res){
 				res.type('application/javascript; charset=utf-8');
+				var fullUrl = "'" + req.protocol + '://' + req.get('host') + "'";
+
 				var clSideScript = 'var fns = ' + JSON.stringify(fnNames) + '\n' + '' +
-					'var chnl = require("/rpc/prepare-channel")(fns) \n' +
+					'var chnl = require("rpc:export-channel")("' + mPath + '", fns, ' + fullUrl + ') \n' +
 					'module.exports = chnl;';
         res.send(clSideScript);
 				res.end();
 			});
 
+			var reservedProps = ['_socket', '_loadDef', '_connected', '_backend' ];
+
 			if (serverChannels[mPath]) {
 				console.warn("This channel name(" + mPath + ") is already exposed-ignoring the command.");
 			} else {
-				if (toExpose._socket || toExpose._loadDef || toExpose._connected) {
-					throw new Error('Failed to expose channel, some property is reserved for socket namespace');
+				if (exposedObj.rpcProps) {
+					throw new Error('Failed to expose channel, rpcProps property is reserved for socket and rpc stuff');
 				}
-				serverChannels[mPath] = new RpcChannel(mPath, toExpose);
+				serverChannels[mPath] = new RpcChannel(mPath, exposedObj);
 			}
 			return rpcInstance;
 		},
@@ -202,12 +212,14 @@ function createServer(ioP, expApp) {
 	var sendFileOpts = {
 		root: './'
 	};
-	var fileMap = {
-		'/rpc/client.js': 'node_modules/socket.io-rpc/client.js', //raw client, do not use this unless you know what you are doing
-		'/rpc/rpc-client.js': 'node_modules/socket.io-rpc/socket.io-rpc-client.js', //normal browser client
-		'/rpc/rpc-client-angular.js': 'node_modules/socket.io-rpc/socket.io-rpc-client-angular.js', //angular client
-		'/rpc/rpc-client-angular-bundle.js': 'node_modules/socket.io-rpc/dist/rpc-client-angular-bundle.js', //client with angular bundled and minified
-		'/rpc/rpc-client-angular-bundle.min.js': 'node_modules/socket.io-rpc/dist/rpc-client-angular-bundle.min.js' // this is not normally needed
+	var nm = 'node_modules/socket.io-rpc/';
+  var fileMap = {
+		'/rpc/client.js': nm + 'client/client.js', //raw client, do not use this unless you know what you are doing
+		'/rpc/rpc-client.js': nm + 'client/socket.io-rpc-client.js', //normal browser client
+		'/rpc/export-channel.js': nm + 'client/export-channel.js', //angular client
+		'/rpc/rpc-client-angular.js': nm + 'client/socket.io-rpc-client-angular.js', //angular client
+		'/rpc/rpc-client-angular-bundle.js': nm + 'dist/rpc-client-angular-bundle.js', //client with angular bundled and minified
+		'/rpc/rpc-client-angular-bundle.min.js': nm + 'dist/rpc-client-angular-bundle.min.js' // this is not normally needed
 	};
 	for (var serverPath in fileMap) {
 		expApp.get(serverPath, function(req, res) {
@@ -269,7 +281,7 @@ function createServer(ioP, expApp) {
 						var channel = serverChannels[data.name];
 
 						if (data.cachedDate && data.cachedDate > runDate) {
-							socket.emit('channelFns', {name: data.name, upToDate: true});
+							socket.emit('channelFns', {name: data.name});
 						} else {
 							var channelFnPayload;
 
@@ -346,6 +358,6 @@ function createServer(ioP, expApp) {
 	return rpcInstance;
 }
 
-createServer.client = require('./socket.io-rpc-client-node');
+createServer.client = require('./client/socket.io-rpc-client-node.js');
 
 module.exports = createServer;

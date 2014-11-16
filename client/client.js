@@ -1,14 +1,18 @@
 module.exports = function ($rootScope, $log, $q) {
 	var nop = function(){};
 	var io = require('socket.io-client');
+	var backends = {};
 	/**
-	 * pseudo constructor, connects to remote server which exposes RPC calls
+	 * pseudo constructor, connects to remote server which exposes RPC calls, if trying to connect to a backend, which
+	 * already exists, then existing instance is returned
 	 * @param {String} url to connect to, for example http://localhost:8080
 	 * @param {Object} handshake for global authorization, is passed to socket.io connect method
 	 * returns {Socket} master socket namespace which you can use for looking under the hood
 	 */
 	function RPCBackend(url, handshake) {
-
+		if (backends[url]) {
+			return backends[url];
+		}
 		var invocationCounter = 0;
 		var endCounter = 0;
 		var serverChannels = {};
@@ -58,10 +62,10 @@ module.exports = function ($rootScope, $log, $q) {
 
 		var _loadChannel = function (name, deferred) {
 			if (!serverChannels.hasOwnProperty(name)) {
-				serverChannels[name] = {};
+				serverChannels[name] = {rpcProps: {}};
 			}
 			var channel = serverChannels[name];
-			channel._loadDef = deferred;
+			channel.rpcProps._loadDef = deferred;
 
 			serverRunDateDeferred.promise.then(function () {
 
@@ -82,7 +86,7 @@ module.exports = function ($rootScope, $log, $q) {
 				}
 			});
 
-			return channel._loadDef.promise;
+			return channel.rpcProps._loadDef.promise;
 		};
 
 		var registerRemoteFunctions = function (data, storeInCache) {
@@ -112,8 +116,8 @@ module.exports = function ($rootScope, $log, $q) {
 				knownTemplates[data.tplId].forEach(remoteMethodInvocation); //this has to be initialized from known template
 			}
 
-			channel._loadDef.resolve(channel);
-			channel._connected = true;
+			channel.rpcProps._loadDef.resolve(channel);
+			channel.rpcProps._connected = true;
 
 			if (storeInCache !== false) {
 				$rootScope.$apply();
@@ -134,8 +138,9 @@ module.exports = function ($rootScope, $log, $q) {
 				return; //this was fired upon reconnect, so let's not register any more event subscribers
 			}
 			var reconDfd = $q.defer();
+			var rpcProps = channel.rpcProps;
 
-			channel._socket = io.connect(baseURL + '/rpc-' + name)
+			channel._socket = io.connect(baseURL + '/rpc/' + name)
 				.on('resolve', function (data) {
 					deferreds[data.Id].resolve(data.value);
 					callEnded(data.Id);
@@ -152,12 +157,12 @@ module.exports = function ($rootScope, $log, $q) {
 				})
 				.on('connectFailed', function (reason) {
 					$log.error('unable to connect to namespace ' + name, reason);
-					channel._loadDef.reject(reason);
+					rpcProps._loadDef.reject(reason);
 				})
 				.on('disconnect', function (data) {
 					reconDfd = $q.defer();
-					channel._connected = false;
-					channel._loadDef = reconDfd;
+					rpcProps._connected = false;
+					rpcProps._loadDef = reconDfd;
 					$log.warn("Server channel " + name + " disconnected.");
 				})
 				.on('reconnect', function () {
@@ -193,15 +198,34 @@ module.exports = function ($rootScope, $log, $q) {
 			 * for a particular channel this will connect and prepare the channel for use, if called more than once for one
 			 * channel, it will return it's promise
 			 * @param {string} name
-			 * @returns {promise}
+			 * @returns {Promise}
 			 */
 			loadChannel: function (name) {
 				if (serverChannels.hasOwnProperty(name)) {
-					return serverChannels[name]._loadDef.promise;
+					return serverChannels[name].rpcProps._loadDef.promise;
 				} else {
 					var def = $q.defer();
 					_loadChannel(name, def);
 					return def.promise;
+				}
+			},
+			/**
+			 * this will create a channel from predefined array of method names
+			 * channel, it will return it's promise
+			 * @param {string} name
+			 * @param {Array<String>} methods must be provided
+			 * @returns {Object} which mirrors the exported object in the serverside script
+			 */
+			loadChannelSync: function (name, methods) {
+				if (serverChannels.hasOwnProperty(name)) {
+					return serverChannels[name];
+				} else {
+					var chnl = {rpcProps: {_loadDef: $q.defer()}};
+          serverChannels[name] = chnl;
+
+					connectToServerChannel(chnl, name);
+					registerRemoteFunctions({fnNames: methods, name: name});
+					return chnl;
 				}
 			},
 			/**
@@ -273,7 +297,7 @@ module.exports = function ($rootScope, $log, $q) {
 			.on('channelDoesNotExist', function (data) {
 
 				var channel = serverChannels[data.name];
-				channel._loadDef.reject();
+				channel.rpcProps._loadDef.reject();
 				$log.warn("no channel under name: " + data.name);
 				$rootScope.$apply();
 
@@ -319,9 +343,11 @@ module.exports = function ($rootScope, $log, $q) {
 		if (!RPCBackend.defaultBackend) {
 			RPCBackend.defaultBackend = rpc;   //the first rpc connection is the default, if you want, you can set some other
 		}
-		return rpc;
+
+		backends[url] = rpc;
+		return rpc;	//an instance of backend
 
 	}
 
-	return RPCBackend;
+	return RPCBackend;	//backend constructor
 };

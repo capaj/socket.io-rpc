@@ -1,7 +1,12 @@
-var myChannel = require('./rpc_channel_test');
-var rpcBackend = require('/rpc/backend');
+var myChannel = require('./simple-example/rpc_channel_test');
+var deepChnl = require('./simple-example/channelDeep/deep2/channelDeep');
+
+var rpcBackend = myChannel._backend;
 console.log("rpc client loaded");
 
+deepChnl.purpose().then(function(res) {
+  console.log(res);
+});
 
 myChannel.getTime().then(function(date) {
   console.log('time on server is: ' + date);

@@ -1,5 +1,5 @@
 var should = require('should');
-var rpcClient = require('../socket.io-rpc-client-node');
+var rpcClient = require('../client/socket.io-rpc-client-node.js');
 var backend = rpcClient('http://localhost:8081');
 
 describe("simple remote channel",function(){
@@ -7,7 +7,7 @@ describe("simple remote channel",function(){
 	var channel;
 	beforeEach(function(done) {
 
-		backend.loadChannel('myChannel')
+		backend.loadChannel('./rpc_channel_test')
 			.then(function(chnl) {
 				channel = chnl;
 				done();
