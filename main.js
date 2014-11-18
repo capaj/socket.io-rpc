@@ -143,7 +143,7 @@ function createServer(ioP, expApp) {
 		 *  Makes a hash of functions available for client's consumption
 		 * @param {String} name
 		 * @param {Object} toExpose
-		 * @param {String} urlForModule used when registering express app.get callback
+		 * @param {String} [urlForModule] used when registering express app.get callback
 		 * @returns {rpcInstance}
 		 */
 		expose: function (name, toExpose, urlForModule) {
