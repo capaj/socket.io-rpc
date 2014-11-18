@@ -14,6 +14,6 @@ module.exports = function(name, methods, backendUrl) {
     backend = RPC(backendUrl);
   }
   var chnl = backend.loadChannelSync(name, methods);
-  chnl._backend = backend;
+  chnl.rpcProps.backend = backend;
   return chnl;
 };

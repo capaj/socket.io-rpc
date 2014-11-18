@@ -94,7 +94,7 @@ module.exports = function ($rootScope, $log, $q) {
 			var remoteMethodInvocation = function (fnName) {
 				channel[fnName] = function () {
 					invocationCounter++;
-					channel._socket.emit('call',
+					channel.rpcProps._socket.emit('call',
 						{Id: invocationCounter, fnName: fnName, args: Array.prototype.slice.call(arguments, 0)}
 					);
 					if (invocationCounter == 1) {
@@ -116,8 +116,12 @@ module.exports = function ($rootScope, $log, $q) {
 				knownTemplates[data.tplId].forEach(remoteMethodInvocation); //this has to be initialized from known template
 			}
 
-			channel.rpcProps._loadDef.resolve(channel);
-			channel.rpcProps._connected = true;
+			var chnlProps = channel.rpcProps;
+			chnlProps._loadDef.resolve(channel);
+			chnlProps._connected = true;
+			chnlProps.disconnect = function() {
+				chnlProps._socket.disconnect();
+			};
 
 			if (storeInCache !== false) {
 				$rootScope.$apply();
@@ -133,14 +137,15 @@ module.exports = function ($rootScope, $log, $q) {
 		 * @param {String} name
 		 */
 		var connectToServerChannel = function (channel, name) {
-			if (channel._socket) {
+			var rpcProps = channel.rpcProps;
+
+			if (rpcProps._socket) {
 				$log.info('connect to server channel ignored, because we already have _socket' + name);
 				return; //this was fired upon reconnect, so let's not register any more event subscribers
 			}
 			var reconDfd = $q.defer();
-			var rpcProps = channel.rpcProps;
 
-			channel._socket = io.connect(baseURL + '/rpc/' + name)
+			rpcProps._socket = io.connect(baseURL + '/rpc/' + name)
 				.on('resolve', function (data) {
 					deferreds[data.Id].resolve(data.value);
 					callEnded(data.Id);
@@ -238,7 +243,7 @@ module.exports = function ($rootScope, $log, $q) {
 					throw new Error('Failed to expose channel, this client channel is already exposed');
 				}
 
-				var channel = {fns: toExpose, deferred: $q.defer()};
+				var channel = {fns: toExpose, deferred: $q.defer(), rpcProps:{}};
 				clientChannels[name] = channel;
 
 				var fnNames = [];
@@ -306,7 +311,7 @@ module.exports = function ($rootScope, $log, $q) {
 
 				var channel = clientChannels[name];
 				var socket = io.connect(baseURL + '/rpcC-' + name + '/' + rpcMaster.io.engine.id);  //rpcC stands for rpc Client
-				channel._socket = socket;
+				channel.rpcProps._socket = socket;
 				socket.on('call', function (data) {
 					var exposed = channel.fns;
 					if (exposed.hasOwnProperty(data.fnName) && typeof exposed[data.fnName] === 'function') {

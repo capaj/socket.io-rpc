@@ -1,11 +1,12 @@
 {
   "name": "socket.io-rpc",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": false,
   "author": "capaj <capajj@gmail.com>",
   "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
   "scripts": {
     "install_example": "cd simple-example && npm install && jspm install",
+    "build": "node build.js && grunt",
     "test": "mocha"
   },
   "main": "./main.js",

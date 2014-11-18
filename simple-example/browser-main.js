@@ -2,11 +2,12 @@ var myChannel = require('./simple-example/rpc_channel_test');
 var plain = require('rpc:plain');
 var deepChnl = require('./simple-example/channelDeep/deep2/channelDeep');
 
-var rpcBackend = myChannel._backend;
+var rpcBackend = myChannel.rpcProps.backend;
 console.log("rpc client loaded");
 
 plain.methodInPlain().then(function(v) {
   console.log("plain call returned ", v);
+  plain.rpcProps.disconnect();
 });
 
 deepChnl.purpose().then(function(res) {
@@ -28,7 +29,7 @@ myChannel.failingMethod().catch(function(err) {
   console.error(err);
   //without this empty callback bluebird laments about unhandled error
 });    // this will display error prpagated from serverside
-myChannel._socket.on('disconnect', function() {
+myChannel.rpcProps._socket.on('disconnect', function() {
   console.log("channel disconnected!");
 });
 
