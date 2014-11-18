@@ -10,7 +10,7 @@ System.config({
 System.config({
   "map": {
     "client.js": "/rpc/client.js",
-    "angular": "github:angular/bower-angular@^1.3.1",
+    "angular": "github:angular/bower-angular@^1.3.3",
     "bluebird": "npm:bluebird/js/browser/bluebird",
     "npm:bluebird": "npm:bluebird@^2.3.11",
     "socket.io-client": "/socket.io/socket.io",
@@ -41,7 +41,7 @@ System.config({
 
 System.config({
   "versions": {
-    "github:angular/bower-angular": "1.3.1",
+    "github:angular/bower-angular": "1.3.3",
     "github:jspm/nodelibs": "0.0.5",
     "github:systemjs/plugin-json": "0.1.0",
     "npm:Base64": "0.2.1",

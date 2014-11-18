@@ -2,7 +2,7 @@ var angular = require('angular');
 /**
  * factory which returns a connect function
  */
-angular.module('RPC', []).factory('$RPC', ['$rootScope', '$log', '$q', require('./client')])
+angular.module('RPC', []).factory('$RPC', ['$rootScope', '$log', '$q', require('rpc:client')])
 /**
  * @ngdoc directive
  * @name RPC.directive:rpcController
@@ -41,7 +41,8 @@ angular.module('RPC', []).factory('$RPC', ['$rootScope', '$log', '$q', require('
 								var localInj = {
 									$scope: scope
 								};
-								localInj[attr.rpcChannel] = channel;
+								var chnlName = attr.rpcChannel.substr(attr.rpcChannel.lastIndexOf('/') + 1);
+								localInj[chnlName] = channel;
 								var ctrl = $controller(ctrlName, localInj);
 								iElement.children().data('$ngControllerController', ctrl);
 							}, function(err) {

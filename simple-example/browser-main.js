@@ -1,8 +1,13 @@
 var myChannel = require('./simple-example/rpc_channel_test');
+var plain = require('rpc:plain');
 var deepChnl = require('./simple-example/channelDeep/deep2/channelDeep');
 
 var rpcBackend = myChannel._backend;
 console.log("rpc client loaded");
+
+plain.methodInPlain().then(function(v) {
+  console.log("plain call returned ", v);
+});
 
 deepChnl.purpose().then(function(res) {
   console.log(res);

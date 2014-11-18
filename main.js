@@ -47,7 +47,7 @@ function createServer(ioP, expApp) {
 	 * @returns {RpcChannel}
 	 * @constructor
 	 */
-	var RpcChannel = function (name, toExpose) {      //
+	var RpcChannel = function (name, toExpose) {
 		this.fns = toExpose;
 
 		/**
@@ -141,10 +141,44 @@ function createServer(ioP, expApp) {
 		},
 		/**
 		 *  Makes a hash of functions available for client's consumption
+		 * @param {String} name
+		 * @param {Object} toExpose
+		 * @param {String} urlForModule used when registering express app.get callback
+		 * @returns {rpcInstance}
+		 */
+		expose: function (name, toExpose, urlForModule) {
+			if (!urlForModule) {
+				urlForModule = '/rpc/' + name + '.js';
+			}
+			var fnNames = Object.keys(toExpose);
+
+			expApp.get(urlForModule, function (req, res){
+				res.type('application/javascript; charset=utf-8');
+				var fullUrl = "'" + req.protocol + '://' + req.get('host') + "'";
+
+				var clSideScript = 'var fns = ' + JSON.stringify(fnNames) + '\n' + '' +
+					'var chnl = require("rpc:export-channel")("' + name + '", fns, ' + fullUrl + ') \n' +
+					'module.exports = chnl;';
+				res.send(clSideScript);
+				res.end();
+			});
+
+			if (serverChannels[name]) {
+				console.warn("This channel name(" + name + ") is already exposed-ignoring the command.");
+			} else {
+				if (toExpose.rpcProps) {
+					throw new Error('Failed to expose channel, rpcProps property is reserved for socket and rpc stuff');
+				}
+				serverChannels[name] = new RpcChannel(name, toExpose);
+			}
+			return rpcInstance;
+		},
+		/**
+		 *  Makes a file's exported methods available for consumption
 		 * @param {String} mPath to the module you want to require on the client side
 		 * @returns {rpcInstance}
 		 */
-		expose: function (mPath) {
+		exposeFile: function (mPath) {
 			var stack = new Error().stack;
 
 			var callerFile = stack.split('\n')[2].match(/\(.*\)/g)[0];
@@ -153,31 +187,10 @@ function createServer(ioP, expApp) {
 			var absToModule = path.join(path.dirname(callerFile), mPath);
       var toModule = path.relative('./', absToModule).split(path.sep);		//relative to the execution context
 			var exposedObj = require(absToModule);
-			var fnNames = Object.keys(exposedObj);
 
 			var url = '/' + toModule.join('/') + '.js';
-      expApp.get(url, function (req, res){
-				res.type('application/javascript; charset=utf-8');
-				var fullUrl = "'" + req.protocol + '://' + req.get('host') + "'";
 
-				var clSideScript = 'var fns = ' + JSON.stringify(fnNames) + '\n' + '' +
-					'var chnl = require("rpc:export-channel")("' + mPath + '", fns, ' + fullUrl + ') \n' +
-					'module.exports = chnl;';
-        res.send(clSideScript);
-				res.end();
-			});
-
-			var reservedProps = ['_socket', '_loadDef', '_connected', '_backend' ];
-
-			if (serverChannels[mPath]) {
-				console.warn("This channel name(" + mPath + ") is already exposed-ignoring the command.");
-			} else {
-				if (exposedObj.rpcProps) {
-					throw new Error('Failed to expose channel, rpcProps property is reserved for socket and rpc stuff');
-				}
-				serverChannels[mPath] = new RpcChannel(mPath, exposedObj);
-			}
-			return rpcInstance;
+     	return this.expose(mPath, exposedObj, url);
 		},
 		/**
 		 *

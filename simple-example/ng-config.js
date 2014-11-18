@@ -3,7 +3,8 @@
     "paths": {
       "*": "*.js",
       "npm:*": "jspm_packages/npm/*.js",
-      "github:*": "jspm_packages/github/*.js"
+      "github:*": "jspm_packages/github/*.js",
+      "rpc:*": "/rpc/*.js"
     },
     // any map config
     map: {
@@ -11,7 +12,7 @@
       "angular": "github:angular/bower-angular@^1.3.1"
     },
     "versions": {
-      "github:angular/bower-angular": "1.3.1"
+      "github:angular/bower-angular": "1.3.3"
     }
 
     // etc. any SystemJS config

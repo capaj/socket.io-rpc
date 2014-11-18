@@ -40,14 +40,19 @@ var io = require('socket.io').listen(server);
 						//				   false is good only when your channels are dynamic so there is no point in caching
 
 var rpcMaster = rpc(io, app)
-	.expose('./rpc_channel_test', function(handshake, CB) {	//second function/parameter is optional for authenticated channels
+	.exposeFile('./rpc_channel_test', function(handshake, CB) {	//second function/parameter is optional for authenticated channels
 		if (handshake.passw == '123') {
 			CB(true);
 		} else {
 			CB(false);
 		}
 	})
-  .expose('./channelDeep/deep2/channelDeep');
+    .exposeFile('./channelDeep/deep2/channelDeep')
+    .expose('plain', {
+        methodInPlain: function() {
+            return 41;
+        }
+    });
 
 io.sockets.on('connection', function (socket) {
     var intId;
