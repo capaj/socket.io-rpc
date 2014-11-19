@@ -64,10 +64,15 @@ Then run it from git repo root:
     <script src="jspm_packages/system.js"></script>
     <script src="config.js"></script> //needs to have bluebird and socket.io-client, look into simple_example folder
     <script type="text/javascript">
-        System.import('rpc/rpc-client').then(function(RPC) { //or you can include this package in CJS module of your own
-            console.log("rpc client loaded");
-
-            var backend = RPC('http://localhost:8081');
+        //as commonJS module
+        System.import('rpc:myChannel').then(function(channel) {
+             channel.getTime().then(function (date) {
+                  console.log('get time on module loaded as cjs module: ' + date);
+              });
+        });
+        //load manually with rpc client
+        System.import('rpc/rpc-client').then(function(channel) { /
+            console.log("rpc server channel loaded");
             backend.loadChannel('myChannel')
                     .then(function (channel) {
                           channel.getTime().then(function (date) {
@@ -179,6 +184,5 @@ There are 4 internal callbacks, which might help you in case you need to be noti
     onEnd           //called when one call is returned
 
 #TODO
-1. generate commonJS compatible definitions for channels, so that you are able to require channel with simple require from node or in browser with systemJS. This feature is gona rock!
-2. use Winston logging instead of vanilla console
+1. use Winston logging instead of vanilla console on serverside
 
