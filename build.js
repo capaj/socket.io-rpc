@@ -7,6 +7,6 @@ builder.build('socket.io-rpc-client-angular', config, 'dist/rpc-client-angular-b
 		console.log('Build complete');
 	})
 	.catch(function(err) {
-		console.log('Build error');
-		console.log(err);
+		console.error('Build error');
+		console.error(err);
 	});
