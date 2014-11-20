@@ -4043,6 +4043,9 @@ function define(){};  define.amd = {};
 System.register("github:angular/bower-angular@1.3.3", ["github:angular/bower-angular@1.3.3/angular.min"], function($__export) {
   "use strict";
   var __moduleName = "github:angular/bower-angular@1.3.3";
+  function require(path) {
+    return $traceurRuntime.require("github:angular/bower-angular@1.3.3", path);
+  }
   return {
     setters: [function(m) {
       Object.keys(m).forEach(function(p) {
