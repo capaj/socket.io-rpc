@@ -234,11 +234,12 @@ function createServer(ioP, expApp) {
 		'/rpc/rpc-client-angular-bundle.js': nm + 'dist/rpc-client-angular-bundle.js', //client with angular bundled and minified
 		'/rpc/rpc-client-angular-bundle.min.js': nm + 'dist/rpc-client-angular-bundle.min.js' // this is not normally needed
 	};
-	for (var serverPath in fileMap) {
+
+	Object.keys(fileMap).forEach(function (serverPath){
 		expApp.get(serverPath, function(req, res) {
 			res.sendFile(fileMap[serverPath], sendFileOpts);
 		});
-	}
+	});
 
 	io = ioP;
 
