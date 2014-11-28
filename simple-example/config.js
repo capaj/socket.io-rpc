@@ -2,8 +2,7 @@ System.config({
   "paths": {
     "*": "*.js",
     "npm:*": "jspm_packages/npm/*.js",
-    "github:*": "jspm_packages/github/*.js",
-    "rpc:*": "/rpc/*.js"
+    "github:*": "jspm_packages/github/*.js"
   }
 });
 

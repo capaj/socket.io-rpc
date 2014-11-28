@@ -157,7 +157,7 @@ function createServer(ioP, expApp) {
 				var fullUrl = "'" + req.protocol + '://' + req.get('host') + "'";
 
 				var clSideScript = 'var fns = ' + JSON.stringify(fnNames) + '\n' + '' +
-					'var chnl = require("rpc:export-channel")("' + name + '", fns, ' + fullUrl + ') \n' +
+					'var chnl = require("rpc/export-channel")("' + name + '", fns, ' + fullUrl + ') \n' +
 					'module.exports = chnl;';
 				res.send(clSideScript);
 				res.end();

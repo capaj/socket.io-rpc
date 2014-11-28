@@ -1,4 +1,4 @@
-var RPC = require('rpc:rpc-client-angular');
+var RPC = require('rpc/rpc-client-angular');
 
 angular.module('app', ['RPC']).controller('testCtrl', function($scope, $RPC, rpc_channel_test) {
   rpc_channel_test.myAsyncTest('passing string as argument').then(function(retVal) {
@@ -28,7 +28,7 @@ angular.module('app', ['RPC']).controller('testCtrl', function($scope, $RPC, rpc
   console.log('ctr run ' + new Date().toJSON());
 }).run(function($RPC, $rootScope, $timeout) {
 //            var backend1 = $rpc('http://192.168.43.44:8081');   // don't forget port, if you are not on 80
-  var backend1 = $RPC('http://localhost:8081');   // don't forget port, if you are not on 80
+  var backend1 = $RPC();   // don't forget port, if you are not on 80
 //            var backend2 = $rpc('http://localhost:8082');   // don't forget port, if you are not on 80
   $rootScope.authHash = function() {
     return {passw: '123'};

@@ -1,4 +1,4 @@
-var RPC = require('rpc:socket.io-rpc-client');
+var RPC = require('rpc/socket.io-rpc-client');
 
 /**
  * @param {String} name

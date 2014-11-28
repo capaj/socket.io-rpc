@@ -1,5 +1,5 @@
 var myChannel = require('./simple-example/rpc_channel_test');
-var plain = require('rpc:plain');
+var plain = require('rpc/plain');
 var deepChnl = require('./simple-example/channelDeep/deep2/channelDeep');
 
 var rpcBackend = myChannel.rpcProps.backend;
@@ -7,11 +7,11 @@ console.log("rpc client loaded");
 
 plain.methodInPlain().then(function(v) {
   console.log("plain call returned ", v);
-  plain.rpcProps.disconnect();
+  //plain.rpcProps.disconnect();  // you can force disconnect like this
 });
 
 deepChnl.purpose().then(function(res) {
-  console.log(res);
+  console.log('deep channel ', res);
 });
 
 myChannel.getTime().then(function(date) {

@@ -1,7 +1,7 @@
 var rpcClient = require('../client/socket.io-rpc-client-node.js');
 // although when you install from npm, your path shoud be more like: ./node_modules/socket.io-rpc/socket.io-rpc-client-node.js
 
-var backend = rpcClient('http://localhost:8081');
+var backend = rpcClient('http://localhost:8031');
 
 backend.loadChannel('./rpc_channel_test')
 	.then(function(channel) {
@@ -18,7 +18,7 @@ backend.loadChannel('./rpc_channel_test')
 			console.error(err);
 			//without this empty callback bluebird laments about unhandled error
 		});    // this will display error prpagated from serverside
-		channel._socket.on('disconnect', function() {
+		channel.rpcProps._socket.on('disconnect', function() {
 			console.log("channel disconnected!");
 		});
 		//channel.nonExistentRemoteFn();  // uncomment for typerror to be thrown and handled by otherwise promise method
