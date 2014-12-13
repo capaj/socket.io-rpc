@@ -1,4 +1,7 @@
 var Promise = require('bluebird');
+var logger = require('debug');
+var debug = logger('socket.io-rpc');
+var lldebug = logger('socket.io-rpc:low-level');
 var _ = require('lodash');
 var path = require('path');
 /**
@@ -22,11 +25,11 @@ function createServer(ioP, expApp) {
 	var clientChannels = {};
 	var getClientChannel = function (id, name) {
 		if (!clientChannels.hasOwnProperty(id)) {
-			//console.log("creating an object for client channels for ID " + id);
+			lldebug("creating an object for client channels for ID " + id);
 			clientChannels[id] = {};
 		}
 		if (!clientChannels[id].hasOwnProperty(name)) {
-			//console.log("creating a client channel for client with ID " + id + " and channel name " + name);
+			lldebug("creating a client channel for client with ID " + id + " and channel name " + name);
 			clientChannels[id][name] = {};
 		}
 		return clientChannels[id][name];
@@ -82,6 +85,7 @@ function createServer(ioP, expApp) {
 					try{
 						retVal = toExpose[data.fnName].apply(socket, data.args);
 					}catch(e){
+						//we explicitly print the error into the console, because uncatched errors should not occur
 						console.error('RPC method ' + data.fnName + ' on channel ' + name + ': ',e);
 						retVal = e;
 					}
@@ -128,7 +132,8 @@ function createServer(ioP, expApp) {
 				endCounter = 0;
 			}
 		} else {
-			console.warn("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
+			//the client can maliciously try and resolve/reject something more than once. We should not throw an error on this, just warn
+			console.error("Deferred Id " + Id + " was resolved/rejected more than once, this should not occur.");
 		}
 	};
 
@@ -214,7 +219,7 @@ function createServer(ioP, expApp) {
 					for (var method in channel.fns) {
 						channel.fns[method] = err;	// references to client channel might be hold in client code, so we need to invalidate them
 					}
-					//console.log("disconnected clc " + name);
+					debug("disconnected clc " + name);
 				});
 			}
 			return channel.dfd.promise;
@@ -250,7 +255,7 @@ function createServer(ioP, expApp) {
 
 		socket.on('disconnect', function() {
 			timeoutId = setTimeout(function () {
-				console.log("cleaning client channels of " + socket.id);
+				debug("cleaning client channels of " + socket.id);
 				delete clientChannels[socket.id];   //cleaning up in disconnect
 				delete clientKnownChannels[socket.id]; //cleaning up in disconnect
 			}, 300000); // after five minutes, get rid of client channels
@@ -321,10 +326,10 @@ function createServer(ioP, expApp) {
 
 			socket.on('exposeChannel', function (data) {   // client wants to expose a channel
 				var clId = socket.id;
-				console.log("client with id " + clId +" exposed rpc channel " + data.name);
+				debug("client with id " + clId +" exposed rpc channel " + data.name);
 				var channel = getClientChannel(clId, data.name);
 				channel.dfd = channel.dfd || Promise.defer();
-//                    channel.deferred = channel.deferred || when.defer();
+
 				channel.fns = channel.fns || {};
 				channel.socket = io.of('/rpcC-'+data.name + '/' + socket.id);  //rpcC stands for rpc Client
 				data.fns.forEach(function (fnName) {
@@ -349,14 +354,14 @@ function createServer(ioP, expApp) {
 					});
 
 					socket.on('reconnect', function () {
-						//not sure about the deffered in this case-it should be there ready for being resolved/rejected,
+						//not sure about the deferred in this case-it should be there ready for being resolved/rejected,
 						// but who will reset it?
-						console.log("reconnected to client chnl " + data.name);
+						debug("reconnected to client chnl " + data.name);
 						channel.dfd.resolve(channel.fns);
 
 					});
 
-//                        console.log("client connected to its own rpc channel " + data.name);
+					debug("client connected to its own rpc channel " + data.name);
 					channel.dfd.resolve(channel.fns);
 
 				});

@@ -183,6 +183,4 @@ There are 4 internal callbacks, which might help you in case you need to be noti
     onCall          //called when one call is made to server
     onEnd           //called when one call is returned
 
-#TODO
-1. use Winston logging instead of vanilla console on serverside
 

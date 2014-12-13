@@ -25,6 +25,7 @@
   "dependencies": {
     "bluebird": "~2.3",
     "chai": "^1.10.0",
+    "debug": "^2.1.0",
     "dom-storage": "^2.0.1",
     "lodash": "2.4.1",
     "socket.io": "1.2.1",
