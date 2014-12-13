@@ -9,10 +9,7 @@
     // any map config
     map: {
       "socket.io-client": "/socket.io/socket.io",
-      "angular": "github:angular/bower-angular@^1.3.1"
-    },
-    "versions": {
-      "github:angular/bower-angular": "1.3.3"
+      "angular": "github:angular/bower-angular@1.3.6"
     }
 
     // etc. any SystemJS config

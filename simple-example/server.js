@@ -80,7 +80,7 @@ app.get('/ng', function (req, res) {
 app.get('/ie8', function (req, res) {
     res.sendFile(__dirname + '/ie8.html');
 });
-app.get('*', function (req, res) {
+app.get('/', function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 

@@ -1,4 +1,4 @@
-var should = require('should');
+require('chai').should();
 var rpcClient = require('../client/socket.io-rpc-client-node.js');
 var backend = rpcClient('http://localhost:8031');
 
