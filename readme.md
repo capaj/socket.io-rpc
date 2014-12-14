@@ -20,6 +20,7 @@ Folder with example can be run after installing all dependencies like this in th
     jspm install
     
 Then run it from git repo root:
+
     node simple-example/server
 
 ## Usage example
