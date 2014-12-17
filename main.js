@@ -50,7 +50,7 @@ function createServer(ioP, expApp) {
 	 * @returns {RpcChannel}
 	 * @constructor
 	 */
-	var RpcChannel = function (name, toExpose) {
+	var RpcChannel = function(name, toExpose) {
 		this.fns = toExpose;
 
 		/**
@@ -64,29 +64,30 @@ function createServer(ioP, expApp) {
 		Object.freeze(toExpose);    //we won't support adding new methods to a channel after creation
 
 
-			for (var tplId in channelTemplates) {
-				if (_.isEqual(channelTemplates[tplId], this.fnNames)) {
-					this.tplId = Number(tplId);   // converting string key to number
-				}
+		for (var tplId in channelTemplates) {
+			if (_.isEqual(channelTemplates[tplId], this.fnNames)) {
+				this.tplId = Number(tplId);   // converting string key to number
 			}
-			if (!_.isNumber(this.tplId)) {   //if no template matches the methods collection we save this channel methods as new template
-				var index = channelTemplatesSize + 1;
-				channelTemplates[index] = this.fnNames;
-				channelTemplatesSize = index;
-				this.tplId = index;
-			}
+		}
+
+		if (!_.isNumber(this.tplId)) {   //if no template matches the methods collection we save this channel methods as new template
+			var index = channelTemplatesSize + 1;
+			channelTemplates[index] = this.fnNames;
+			channelTemplatesSize = index;
+			this.tplId = index;
+		}
 
 		this._socket = io.of('/rpc/' + name);
 
-		this._socket.on('connection', function (socket) {
-			var invocationRes = function (data) {
+		this._socket.on('connection', function(socket) {
+			var invocationRes = function(data) {
 				if (toExpose.hasOwnProperty(data.fnName) && typeof toExpose[data.fnName] === 'function') {
 					var retVal;
-					try{
+					try {
 						retVal = toExpose[data.fnName].apply(socket, data.args);
-					}catch(e){
+					} catch (e) {
 						//we explicitly print the error into the console, because uncatched errors should not occur
-						console.error('RPC method ' + data.fnName + ' on channel ' + name + ': ',e);
+						console.error('RPC method ' + data.fnName + ' on channel ' + name + ': ', e);
 						retVal = e;
 					}
 					/* NOTE: Will return true for *any thenable object*, and isn't truly safe, since it will access the `then` property*/
@@ -226,23 +227,27 @@ function createServer(ioP, expApp) {
 		}
 	};
 
-
-	var sendFileOpts = {
-		root: './'
+	/**
+	 * @param {String} rel
+	 * @returns {*}
+	 */
+	var absPath = function(rel) {
+		return path.join(__dirname, rel);
 	};
-	var nm = 'node_modules/socket.io-rpc/';
-  var fileMap = {
-		'/rpc/client.js': nm + 'client/client.js', //raw client, do not use this unless you know what you are doing
-		'/rpc/rpc-client.js': nm + 'client/socket.io-rpc-client.js', //normal browser client
-		'/rpc/export-channel.js': nm + 'client/export-channel.js', //angular client
-		'/rpc/rpc-client-angular.js': nm + 'client/socket.io-rpc-client-angular.js', //angular client
-		'/rpc/rpc-client-angular-bundle.js': nm + 'dist/rpc-client-angular-bundle.js', //client with angular bundled and minified
-		'/rpc/rpc-client-angular-bundle.min.js': nm + 'dist/rpc-client-angular-bundle.min.js' // this is not normally needed
+
+	var fileMap = {
+		'/rpc/client.js': 'client/client.js', //raw client, do not use this unless you know what you are doing
+		'/rpc/rpc-client.js': 'client/socket.io-rpc-client.js', //normal browser client
+		'/rpc/export-channel.js': 'client/export-channel.js', //angular client
+		'/rpc/rpc-client-angular.js': 'client/socket.io-rpc-client-angular.js', //angular client
+		'/rpc/rpc-client-angular-bundle.js': 'dist/rpc-client-angular-bundle.js', //client with angular bundled and minified
+		'/rpc/rpc-client-angular-bundle.min.js': 'dist/rpc-client-angular-bundle.min.js' // this is not normally needed
 	};
 
 	Object.keys(fileMap).forEach(function (serverPath){
+		fileMap[serverPath] = absPath(fileMap[serverPath]);
 		expApp.get(serverPath, function(req, res) {
-			res.sendFile(fileMap[serverPath], sendFileOpts);
+			res.sendFile(fileMap[serverPath]);
 		});
 	});
 

@@ -30,7 +30,10 @@ Then run it from git repo root:
     // you should be able to use any other http://promises-aplus.github.io/promises-spec/ compliant library, but I would greatly recommend using bluebird
     var Promise = require('bluebird');
     var rpc = require('socket.io-rpc');
+
     var rpcMaster = rpc(io, {channelTemplates: true, expressApp: app})
+            //channelTemplates true is default, though you can change it, I would recommend leaving it to true,
+            //				   false is good only when your channels are dynamic so there is no point in caching
     	.expose('myChannel', {
         //plain JS function
         getTime: function () {
