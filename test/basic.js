@@ -1,5 +1,9 @@
 require('chai').should();
 var rpcClient = require('../client/socket.io-rpc-client-node.js');
+var cp = require('child_process');
+
+var n = cp.fork('./simple-example/server.js');
+
 var backend = rpcClient('http://localhost:8031');
 
 describe("simple remote channel",function(){
@@ -19,9 +23,9 @@ describe("simple remote channel",function(){
 
 	it('should have 3 methods',function(){
 		var methods = Object.keys(channel);
-		methods.should.containEql('getTime');
-		methods.should.containEql('myAsyncTest');
-		methods.should.containEql('failingMethod');
+		methods.should.include('getTime');
+		methods.should.include('myAsyncTest');
+		methods.should.include('failingMethod');
 
 	});
 
