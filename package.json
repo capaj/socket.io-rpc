@@ -20,6 +20,7 @@
   "keywords": [
     "socket.io",
     "rpc",
+    "isomorphic",
     "rmi"
   ],
   "dependencies": {
