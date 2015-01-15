@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+- '0.10'
+- '0.11'
+before_install:
+  - cd simple-example && npm install && cd ..
+deploy:
+  provider: npm
+  email: capajj@gmail.com
+  on:
+    tags: true
+    repo: capaj/socket.io-rpc
+    all_branches: true
