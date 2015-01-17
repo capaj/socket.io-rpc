@@ -18,8 +18,7 @@ Angular.js lib contains special rpc-controller directive, which when compiled as
 #Simple example
 Folder with example can be run after installing all dependencies like this in the simple-example folder:
 
-    npm install
-    jspm install
+    npm install //this runs jspm install too
     
 Then run it from git repo root:
 
