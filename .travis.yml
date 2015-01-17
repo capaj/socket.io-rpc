@@ -3,7 +3,7 @@ node_js:
 - '0.10'
 - '0.11'
 before_install:
-  - cd simple-example && npm install && cd ..
+  - cd simple-example && npm install --ignore-scripts && cd ..
 deploy:
   provider: npm
   email: capajj@gmail.com
