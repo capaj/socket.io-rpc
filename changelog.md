@@ -1,4 +1,6 @@
 ## ChangeLog
+###0.8.8 -> 0.8.9
+Client now separated in another npm package. use npm install socket.io-rpc-client to get it.
 ###0.6.9 -> 0.7.0
 Now only usable with commonJS compatible module loader. I strongly advise to use systemJS module loader in the browser.
 ###0.5.4 -> 0.6.0

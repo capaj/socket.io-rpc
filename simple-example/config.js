@@ -9,9 +9,9 @@ System.config({
 
 System.config({
   "map": {
-    "socket.io-client": "/socket.io/socket.io",
     "angular": "github:angular/bower-angular@1.3.9",
     "npm:bluebird": "npm:bluebird@2.7.1",
+    "socket.io-client": "/socket.io/socket.io",
     "github:jspm/nodelibs-process@0.1.0": {
       "process": "npm:process@0.10.0"
     },

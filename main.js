@@ -228,20 +228,18 @@ function createServer(ioP, expApp) {
 	};
 
 	/**
-	 * @param {String} rel
-	 * @returns {*}
+	 * @param {String} rel path
+	 * @returns {String}
 	 */
 	var absPath = function(rel) {
 		return path.join(__dirname, rel);
 	};
 
 	var fileMap = {
-		'/rpc/client.js': 'client/client.js', //raw client, do not use this unless you know what you are doing
-		'/rpc/rpc-client.js': 'client/socket.io-rpc-client.js', //normal browser client
-		'/rpc/export-channel.js': 'client/export-channel.js', //angular client
-		'/rpc/rpc-client-angular.js': 'client/socket.io-rpc-client-angular.js', //angular client
-		'/rpc/rpc-client-angular-bundle.js': 'dist/rpc-client-angular-bundle.js', //client with angular bundled and minified
-		'/rpc/rpc-client-angular-bundle.min.js': 'dist/rpc-client-angular-bundle.min.js' // this is not normally needed
+		'/rpc/client.js': 'node_modules/socket.io-rpc-client/client.js', //raw client, do not use this unless you know what you are doing
+		'/rpc/rpc-client.js': 'node_modules/socket.io-rpc-client/socket.io-rpc-client.js', //normal browser client
+		'/rpc/export-channel.js': 'node_modules/socket.io-rpc-client/export-channel.js', //angular client
+		'/rpc/rpc-client-angular.js': 'node_modules/socket.io-rpc-client/socket.io-rpc-client-angular.js' //angular client
 	};
 
 	Object.keys(fileMap).forEach(function (serverPath){
@@ -382,6 +380,6 @@ function createServer(ioP, expApp) {
 	return rpcInstance;
 }
 
-createServer.client = require('./client/socket.io-rpc-client-node.js');
+createServer.client = require('socket.io-rpc-client');
 
 module.exports = createServer;
