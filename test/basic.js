@@ -1,5 +1,5 @@
 require('chai').should();
-var rpcClient = require('../client/socket.io-rpc-client-node.js');
+var rpcClient = require('socket.io-rpc-client');
 var cp = require('child_process');
 
 var n = cp.fork('./simple-example/server.js');
