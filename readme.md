@@ -12,9 +12,6 @@ Has three client libraries(which sit in separate [repo](https://github.com/capaj
 * for AngularJS
 * for node
 
-All libraries are written in commonJS module style, so you need to use SystemJS loader to be able to use them in the browser.
-Angular.js lib contains special rpc-controller directive, which when compiled asynchronously loads server channel and instantiates classic angular controller when this channel is ready.
-
 #Simple example
 Folder with example can be run after installing all dependencies like this in the simple-example folder:
 
