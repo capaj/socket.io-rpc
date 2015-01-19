@@ -7,7 +7,7 @@ Main purpose is to make it more easier to structure your code for browser-server
 
 With socket.io-rpc, you just expose a channel of functions and then call those as if they were regular async functions defined on your side, socket.io-rpc automatically resolves a promise on other side, when function returns or returned promise is resolved. It even propagates errors(thrown and returned), so you get error handling almost for free.
 
-Has three client libraries:
+Has three client libraries(which sit in separate [repo](https://github.com/capaj/socket.io-rpc-client)/[npm package](https://www.npmjs.com/package/socket.io-rpc-client)):
 * for browser
 * for AngularJS
 * for node
