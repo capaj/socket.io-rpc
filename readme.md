@@ -31,8 +31,6 @@ Then run it from git repo root:
     var rpc = require('socket.io-rpc');
 
     var rpcMaster = rpc(io, app)
-            //channelTemplates true is default, though you can change it, I would recommend leaving it to true,
-            //				   false is good only when your channels are dynamic so there is no point in caching
     	.expose('myChannel', {
         //plain JS function
         getTime: function () {
