@@ -191,7 +191,7 @@ function createServer(ioP, expApp) {
 			callerFile = callerFile.substr(1, callerFile.indexOf('.js') + 2);
 
 			var absToModule = path.join(path.dirname(callerFile), mPath);
-      var toModule = path.relative('./', absToModule).split(path.sep);		//relative to the execution context
+  			var toModule = path.relative('./', absToModule).split(path.sep);	//relative to the execution context
 			var exposedObj = require(absToModule);
 
 			var url = '/' + toModule.join('/') + '.js';
