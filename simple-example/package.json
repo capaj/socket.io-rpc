@@ -7,12 +7,18 @@
   "dependencies": {
     "express": "~4",
     "morgan": "^1.3.0",
-    "socket.io": "1.3.2"
+    "socket.io": "^1.3",
+    "socket.io-rpc-client": "^0.8.13"
   },
   "jspm": {
     "dependencies": {
-      "angular": "1.3.9",
-      "bluebird": "npm:bluebird@^2"
+      "angular": "github:angular/bower-angular@1.3.15",
+      "bluebird": "npm:bluebird@^2",
+      "socket.io-rpc-client": "github:capaj/socket.io-rpc-client@0.8.15"
+    },
+    "devDependencies": {
+      "traceur": "github:jmcriffey/bower-traceur@0.0.87",
+      "traceur-runtime": "github:jmcriffey/bower-traceur-runtime@0.0.87"
     }
   }
 }

@@ -157,13 +157,13 @@ function createServer(ioP, expApp) {
 				urlForModule = '/rpc/' + name + '.js';
 			}
 			var fnNames = Object.keys(toExpose);
-
+			debug('rpc module registered on ', urlForModule);
 			expApp.get(urlForModule, function (req, res){
 				res.type('application/javascript; charset=utf-8');
 				var fullUrl = "'" + req.protocol + '://' + req.get('host') + "'";
 
 				var clSideScript = 'var fns = ' + JSON.stringify(fnNames) + '\n' + '' +
-					'var chnl = require("rpc/export-channel")("' + name + '", fns, ' + fullUrl + ') \n' +
+					'var chnl = require("socket.io-rpc-client/export-channel")("' + name + '", fns, ' + fullUrl + ') \n' +
 					'module.exports = chnl;';
 				res.send(clSideScript);
 				res.end();
@@ -226,28 +226,6 @@ function createServer(ioP, expApp) {
 			return channel.dfd.promise;
 		}
 	};
-
-	/**
-	 * @param {String} rel path
-	 * @returns {String}
-	 */
-	var absPath = function(rel) {
-		return path.join(__dirname, rel);
-	};
-
-	var fileMap = {
-		'/rpc/client.js': 'node_modules/socket.io-rpc-client/client.js', //raw client, do not use this unless you know what you are doing
-		'/rpc/rpc-client.js': 'node_modules/socket.io-rpc-client/socket.io-rpc-client.js', //normal browser client
-		'/rpc/export-channel.js': 'node_modules/socket.io-rpc-client/export-channel.js', //angular client
-		'/rpc/rpc-client-angular.js': 'node_modules/socket.io-rpc-client/socket.io-rpc-client-angular.js' //angular client
-	};
-
-	Object.keys(fileMap).forEach(function (serverPath){
-		fileMap[serverPath] = absPath(fileMap[serverPath]);
-		expApp.get(serverPath, function(req, res) {
-			res.sendFile(fileMap[serverPath]);
-		});
-	});
 
 	io = ioP;
 
@@ -379,7 +357,5 @@ function createServer(ioP, expApp) {
 
 	return rpcInstance;
 }
-
-createServer.client = require('socket.io-rpc-client');
 
 module.exports = createServer;

@@ -1,6 +1,6 @@
 {
   "name": "socket.io-rpc",
-  "version": "0.8.11",
+  "version": "0.8.12",
   "private": false,
   "author": "capaj <capajj@gmail.com>",
   "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
@@ -28,8 +28,7 @@
     "bluebird": "^2",
     "dom-storage": "^2.0.1",
     "lodash": "2.4.1",
-    "socket.io": "^1",
-    "socket.io-rpc-client": "^0.8"
+    "socket.io": "^1"
   },
   "license": "MIT",
   "devDependencies": {
@@ -38,13 +37,5 @@
     "systemjs-builder": "^0.5",
     "grunt-contrib-uglify": "~0.7",
     "grunt-ng-annotate": "~0.8"
-  },
-  "jspm": {
-    "name": "moonridge",
-    "main": "socket.io-rpc-client-angular.js",
-    "configFile": "dist/build-config.js",
-    "dependencies": {
-      "angular": "^1.3"
-    }
   }
 }

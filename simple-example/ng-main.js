@@ -1,4 +1,4 @@
-var RPC = require('rpc/rpc-client-angular');
+var RPC = require('socket.io-rpc-client/socket.io-rpc-client-angular');
 
 angular.module('app', ['RPC']).controller('testCtrl', function($scope, $RPC, rpc_channel_test) {
   rpc_channel_test.myAsyncTest('passing string as argument').then(function(retVal) {
