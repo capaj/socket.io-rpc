@@ -6,7 +6,6 @@
   "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
   "scripts": {
     "install_example": "cd simple-example && npm install && jspm install",
-    "build": "node build.js && grunt",
     "test": "mocha"
   },
   "main": "./main.js",
