@@ -12,6 +12,8 @@ Has three client libraries(which sit in separate [repo](https://github.com/capaj
 * for AngularJS
 * for node
 
+Client side library has to be installed via [JSPM](https://github.com/jspm/jspm-cli).
+
 #Simple example
 Folder with example can be run after installing all dependencies like this in the simple-example folder:
 
@@ -65,13 +67,13 @@ Then run it from git repo root:
     <script src="config.js"></script> //needs to have bluebird and socket.io-client, look into simple_example folder
     <script type="text/javascript">
         //as commonJS module
-        System.import('rpc:myChannel').then(function(channel) {
+        System.import('rpc/myChannel').then(function(channel) {
              channel.getTime().then(function (date) {
                   console.log('get time on module loaded as cjs module: ' + date);
               });
         });
         //load manually with rpc client
-        System.import('rpc/rpc-client').then(function(channel) { /
+        System.import('socket.io-rpc-client').then(function(backend) { /
             console.log("rpc server channel loaded");
             backend.loadChannel('myChannel')
                     .then(function (channel) {
@@ -126,7 +128,7 @@ Then run it from git repo root:
        <script src="jspm_packages/system.js"></script>
        <script src="config.js"></script>
        <script type="text/javascript">
-           System.import('rpc/rpc-client-angular').then(function(RPC) {
+           System.import('socket.io-rpc-client/socket.io-rpc-client-angular').then(function(RPC) {
                 angular.module('app', ['RPC']).controller('testCtrl', function ($scope, myChannel) {
 
                 myChannel.getTime().then(function (date) {
