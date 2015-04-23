@@ -32,6 +32,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "socket.io-rpc-client": "^0.8",
     "mocha": "^2.1.0",
     "chai": "^1.10.0",
     "systemjs-builder": "^0.5",
