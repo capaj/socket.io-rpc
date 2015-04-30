@@ -6,7 +6,7 @@ var server = cp.fork('./simple-example/server.js');
 
 var backend = rpcClient('http://localhost:8031');
 
-describe("simple remote channel",function(){
+describe("simple tree of remote methods",function(){
 
 	var channel;
 	var otherChannel;

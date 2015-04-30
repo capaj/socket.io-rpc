@@ -1,20 +1,26 @@
+var express = require('express');
+var socketIO = require('socket.io');
+
 var Promise = require('bluebird');
 var logger = require('debug');
 var debug = logger('socket.io-rpc');
 var lldebug = logger('socket.io-rpc:low-level');
 var _ = require('lodash');
 var path = require('path');
+
 /**
  * @param {Manager} ioP socket.io manager instance returned by require('socket.io').listen(server);
  * @param {Express} expApp express app
  * @returns {{expose: Function, loadClientChannel: Function, masterChannel: Object}} rpc backend instance
  */
-function createServer(ioP, expApp) {
+function createServer(port) {
+	var expApp = express();
+	var server = app.listen(port);
 
+    var io = socketIO.listen(server);
 	var runDate = new Date();
-	var io;
 
-	//channel template support hash, will store the templates
+	//channel template support hash, where we will store the templates
 	var channelTemplates = {};
 	var channelTemplatesSize = 0;
 	var clientKnownChannels = {};
@@ -226,8 +232,6 @@ function createServer(ioP, expApp) {
 			return channel.dfd.promise;
 		}
 	};
-
-	io = ioP;
 
 	io.sockets.on('connection', function (socket) {
 		clientKnownChannels[socket.id] = [];

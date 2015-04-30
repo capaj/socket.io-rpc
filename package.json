@@ -27,15 +27,14 @@
     "bluebird": "^2",
     "dom-storage": "^2.0.1",
     "lodash": "2.4.1",
-    "socket.io": "^1"
+    "socket.io": "^1",
+    "express": "~4"
   },
   "license": "MIT",
   "devDependencies": {
     "socket.io-rpc-client": "^0.8",
     "mocha": "^2.1.0",
     "chai": "^1.10.0",
-    "systemjs-builder": "^0.5",
-    "grunt-contrib-uglify": "~0.7",
-    "grunt-ng-annotate": "~0.8"
+    "systemjs-builder": "^0.5"
   }
 }

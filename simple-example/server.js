@@ -1,43 +1,35 @@
-var express = require('express');
+var rpc = require('../main.js');
 
-var app = module.exports = express();
+var port = 8031;
+
+var rpcApp = rpc(port, {
+    test: require('./rpc_channel_test'),
+    deep: {channel: require('./channelDeep/deep2/channelDeep')},
+    plain: function(){
+        return 41;
+    }
+}, {
+    test: function(handshake, CB) {	//second function/parameter is optional for authenticated channels
+        if (handshake.passw == '123') {
+            CB(true);
+        } else {
+            CB(false);
+        }
+    }
+});
+
+var app = rpcApp.expressApp;
 app.use(require('morgan')('dev'));
-
-app.set('port', 8031);
-
-var server = app.listen(app.get('port'));
 app.use(express.static(__dirname));
 
-var rpc = require('../main.js');
-var io = require('socket.io').listen(server);
-
-var rpcMaster = rpc(io, app)
-	.exposeFile('./rpc_channel_test', function(handshake, CB) {	//second function/parameter is optional for authenticated channels
-		if (handshake.passw == '123') {
-			CB(true);
-		} else {
-			CB(false);
-		}
-	})
-    .exposeFile('./channelDeep/deep2/channelDeep')
-    .expose('plain', {
-        methodInPlain: function() {
-            return 41;
-        }
-    });
-
-io.sockets.on('connection', function (socket) {
+rpcApp.io.sockets.on('connection', function (socket) {
     var intId;
-
-    rpcMaster.loadClientChannel(socket, 'clientChannel').then(function (fns) {
-        intId = setInterval(function() {
-            console.log("cl call " + socket.id);
-
-            fns.fnOnClient("calling client ").then(function (ret) {
-                console.log("client returned: " + ret);
-            });
-        }, 5000);
-    });
+    console.log("cl call " + socket.id);
+    intId = setInterval(function() {
+        socket.callRpc('fnOnClient').then(function(){
+            console.log("client returned: " + ret);
+        });
+    }, 5000);
 
     socket.on('disconnect', function () {
         console.log("disconnected, stop calling it");
