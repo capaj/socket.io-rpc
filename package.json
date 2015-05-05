@@ -23,12 +23,13 @@
     "rmi"
   ],
   "dependencies": {
-    "debug": "^2.1.1",
     "bluebird": "^2",
+    "debug": "^2.1.1",
     "dom-storage": "^2.0.1",
+    "express": "~4",
     "lodash": "2.4.1",
     "socket.io": "^1",
-    "express": "~4"
+    "traverse": "^0.6.6"
   },
   "license": "MIT",
   "devDependencies": {

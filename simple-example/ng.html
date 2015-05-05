@@ -10,7 +10,7 @@
 <body>
     <h1>Angular socket.io-rpc test/showcase</h1>
     <!--You can also use regular ng-controller, but then you have to load channel yourself by calling
-    $rpc.loadChannel('myChannel'); inside it-->
+    $rpc.fetchNode('rpc'); inside it-->
     <div rpc-controller="testCtrl" rpc-channel="./rpc_channel_test">
         getTime: <span ng-bind="serverTime"></span> <button ng-click="getTime()">getTime()</button><br>
         asyncTest: {{ asyncTest }}

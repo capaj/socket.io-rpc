@@ -1,10 +1,9 @@
-var rpc = require('../main.js');
-
+var RPC = require('../main.js');
+var express = require('express');
 var port = 8031;
 
-var rpcApp = rpc(port, {
+var rpcApp = new RPC(port, {
     test: require('./rpc_channel_test'),
-    deep: {channel: require('./channelDeep/deep2/channelDeep')},
     plain: function(){
         return 41;
     }
@@ -22,11 +21,11 @@ var app = rpcApp.expressApp;
 app.use(require('morgan')('dev'));
 app.use(express.static(__dirname));
 
-rpcApp.io.sockets.on('connection', function (socket) {
+rpcApp.io.on('connection', function (socket) {
     var intId;
     console.log("cl call " + socket.id);
     intId = setInterval(function() {
-        socket.callRpc('fnOnClient').then(function(){
+        socket.rpc.call('fnOnClient').then(function(){
             console.log("client returned: " + ret);
         });
     }, 5000);
