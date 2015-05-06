@@ -3,7 +3,7 @@ var rpcClient = require('socket.io-rpc-client');
 
 var backend = rpcClient('http://localhost:8031');
 
-backend.fetchNode('./test')
+backend.fetchNode('test')
 	.then(function(rpcNode) {
 		rpcNode.getTime().then(function(date) {
 			console.log('time on server is: ' + date);

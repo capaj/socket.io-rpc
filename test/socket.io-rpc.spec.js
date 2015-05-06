@@ -8,12 +8,14 @@ var backend = rpcClient('http://localhost:8031');
 
 describe("simple tree of remote methods",function(){
 
+	this.timeout(10000);
 	var remoteMethods;
 	before(function(done) {
 
-		backend.fetchNode('rpc/test')
+		backend.fetchNode('test')
 			.then(function(chnl) {
 				remoteMethods = chnl;
+				console.log("sss");
 				done();
 			}, function(err) {
 				throw err;

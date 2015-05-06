@@ -62,12 +62,16 @@ function RPCserver(port, fnTree) {
 		socket.on('call', invocationRes);
 
 		socket.on('node', function (path) {
+
 			var methods = fnTree;
 			if (path) {
-				methods = traverse(fnTree).get(path);
+				methods = traverse(fnTree).get(path.split('.'));
 			}
+			
 			if (!methods) {
 				socket.emit('noSuchNode', path);
+				debug('client requested node ' + path + ' which was not found');
+				return;
 			}
 			var localFnTree = traverse(methods).map(function(el) {
 				if (this.isLeaf) {
@@ -78,6 +82,8 @@ function RPCserver(port, fnTree) {
 			});
 
 			socket.emit('node', {path: path, tree:localFnTree});
+			debug('client requested node ' + path + 'which was sent as: ', localFnTree);
+
 		});
 		clientKnownChannels[socket.id] = [];
 
@@ -117,7 +123,9 @@ function RPCserver(port, fnTree) {
 
 		socket.rpc = {
 			call: function(path) {
-				//TOOO
+				return new Promise(function(resolve, reject) {
+
+				});
 			},
 			fetchNode: function() {
 				//TODO
