@@ -1,3 +1,4 @@
+require('error-tojson');
 var express = require('express');
 var socketIO = require('socket.io');
 var traverse = require('traverse');
@@ -24,7 +25,11 @@ function RPCserver(port, fnTree) {
 
 	this.io.on('connection', function(socket) {
 		var invocationRes = function(data) {
-			var method = traverse(tree).get(data.fnPath.split('.'));
+			try{
+				var method = traverse(fnTree).get(data.fnPath.split('.'));
+			}catch(err){
+				debug('error when resolving an invocation', err);
+			}
 			if (method && method.apply) {	//we could also check if it is a function, but this might be bit faster
 				var retVal;
 				try {
@@ -40,7 +45,7 @@ function RPCserver(port, fnTree) {
 						socket.emit('resolve', { Id: data.Id, value: asyncRetVal });
 					}, function (error) {
 						if (error instanceof Error) {
-							error = error.toString();
+							error = error.toJSON();
 						}
 						socket.emit('reject', { Id: data.Id, reason: error });
 
@@ -55,7 +60,7 @@ function RPCserver(port, fnTree) {
 				}
 
 			} else {
-				socket.emit('reject', {Id: data.Id, reason: 'no such function has been exposed: ' + data.fnPath });
+				socket.emit('reject', {Id: data.Id, reason: new Error('function is not exposed: ' + data.fnPath).toJSON() });
 			}
 		};
 
