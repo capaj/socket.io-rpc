@@ -3,19 +3,30 @@ var rpcClient = require('socket.io-rpc-client');
 var cp = require('child_process');
 var Promise = require('bluebird');
 var server = cp.fork('./simple-example/server.js');
-
 var rpc = rpcClient('http://localhost:8031');
 
-describe("simple tree of remote methods",function(){
+describe('initialization', function() {
+	it('trying to fetch node on a wrong port should reject the promise', function() {
+		this.timeout(8000);
+
+		var failingRPC = rpcClient('http://localhost:8666');
+		return failingRPC.fetchNode('test')
+			.then(function() {
+				throw new Error('this should not happen');	//do you have some RPC server running on 8666?
+			}, function(err) {
+				err.message.should.equal('xhr poll error');
+			});
+	});
+});
+
+describe("simple tree of remote methods", function(){
 
 	this.timeout(10000);
 	var remoteMethods;
-	before(function(done) {
-
-		rpc.fetchNode('test')
+	before(function() {
+		return rpc.fetchNode('test')
 			.then(function(chnl) {
 				remoteMethods = chnl;
-				done();
 			}, function(err) {
 				throw err;
 			});
