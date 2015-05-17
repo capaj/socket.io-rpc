@@ -90,8 +90,8 @@ function RPCserver(port, fnTree) {
 			debug('client requested node ' + path + 'which was sent as: ', localFnTree);
 
 		});
-		clientKnownChannels[socket.id] = [];
 
+		clientKnownChannels[socket.id] = [];
 		var timeoutId;
 
 		socket.on('disconnect', function() {
@@ -110,13 +110,22 @@ function RPCserver(port, fnTree) {
 			}, 300000); // after five minutes, get rid of client channels
 		});
 
+    socket.on('resolve', function (data) {
+      deferreds[data.Id].resolve(data.value);
+      callToClientEnded(data.Id);
+    });
+    socket.on('reject', function (data) {
+      deferreds[data.Id].reject(data.reason);
+      callToClientEnded(data.Id);
+    });
+
+
 		socket.on('reconnect', function () {
 			if (timeoutId) {
 				clearTimeout(timeoutId);
 			}
 			var thisClientChnls = clientChannels[socket.id];
 			if (!thisClientChnls) {
-				//TODO ask client to reexpose channels
 				socket.emit('reexposeChannels');
 			} else {
 				var index = thisClientChnls.length;
@@ -125,6 +134,8 @@ function RPCserver(port, fnTree) {
 				}
 			}
 		});
+
+
 
 		socket.rpc = {
 			call: function(path) {
@@ -149,10 +160,8 @@ function RPCserver(port, fnTree) {
 	});
 
 	var clientKnownChannels = {};
-
-
 	var deferreds = [];
-	var serverChannels = {};
+
 	var clientChannels = {};
 
 

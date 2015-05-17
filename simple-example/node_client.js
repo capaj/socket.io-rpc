@@ -1,5 +1,4 @@
 var rpcClient = require('socket.io-rpc-client');
-// although when you install from npm, your path shoud be more like: ./node_modules/socket.io-rpc/socket.io-rpc-client-node.js
 
 var backend = rpcClient('http://localhost:8031');
 
