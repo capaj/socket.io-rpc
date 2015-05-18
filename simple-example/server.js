@@ -25,7 +25,7 @@ rpcApp.io.on('connection', function (socket) {
     var intId;
     console.log("cl call " + socket.id);
     intId = setInterval(function() {
-        socket.rpc.call('fnOnClient').then(function(){
+        socket.rpc.call('fnOnClient')().then(function(ret){
             console.log("client returned: " + ret);
         });
     }, 5000);

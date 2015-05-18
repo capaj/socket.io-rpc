@@ -19,16 +19,24 @@ function RPCserver(port, fnTree) {
 	var expApp = express();
 	var server = expApp.listen(port);
 
-    var io = socketIO.listen(server);
+	var io = socketIO.listen(server);
 
 	this.io = io.of('/rpc');
 
-	this.io.on('connection', function(socket) {
+	this.io.on('connect', function(socket) {
+		lldebug("connected socket.id ", socket.id);
 		var invocationRes = function(data) {
-			try{
+			lldebug('invocation of ', data.fnPath);
+			try {
 				var method = traverse(fnTree).get(data.fnPath.split('.'));
-			}catch(err){
+			} catch (err) {
 				debug('error when resolving an invocation', err);
+			}
+			if (!Number.isInteger(data.id)) {
+				socket.emit('rpcError', {
+					reason: new TypeError('id is a required property for a call data payload')
+						.toJSON()
+				});
 			}
 			if (method && method.apply) {	//we could also check if it is a function, but this might be bit faster
 				var retVal;
@@ -41,38 +49,41 @@ function RPCserver(port, fnTree) {
 				}
 				/* NOTE: Will return true for *any thenable object*, and isn't truly safe, since it will access the `then` property*/
 				if (retVal && typeof retVal.then === 'function') {    // this is async function, so 'return' is emitted after it finishes
-					retVal.then(function (asyncRetVal) {
-						socket.emit('resolve', { Id: data.Id, value: asyncRetVal });
-					}, function (error) {
+					retVal.then(function(asyncRetVal) {
+						socket.emit('resolve', {Id: data.Id, value: asyncRetVal});
+					}, function(error) {
 						if (error instanceof Error) {
 							error = error.toJSON();
 						}
-						socket.emit('reject', { Id: data.Id, reason: error });
+						socket.emit('reject', {Id: data.Id, reason: error});
 
 					});
 				} else {
 					//synchronous
 					if (retVal instanceof Error) {
-						socket.emit('reject', { Id: data.Id, reason: retVal.toString() });
+						socket.emit('reject', {Id: data.Id, reason: retVal.toString()});
 					} else {
-						socket.emit('resolve', { Id: data.Id, value: retVal });
+						socket.emit('resolve', {Id: data.Id, value: retVal});
 					}
 				}
 
 			} else {
-				socket.emit('reject', {Id: data.Id, reason: new Error('function is not exposed: ' + data.fnPath).toJSON() });
+				socket.emit('reject', {
+					Id: data.Id,
+					reason: new Error('function is not exposed: ' + data.fnPath).toJSON()
+				});
 			}
 		};
 
 		socket.on('call', invocationRes);
 
-		socket.on('node', function (path) {
+		socket.on('fetchNode', function(path) {
 
 			var methods = fnTree;
 			if (path) {
 				methods = traverse(fnTree).get(path.split('.'));
 			}
-			
+
 			if (!methods) {
 				socket.emit('noSuchNode', path);
 				debug('client requested node ' + path + ' which was not found');
@@ -86,88 +97,104 @@ function RPCserver(port, fnTree) {
 				}
 			});
 
-			socket.emit('node', {path: path, tree:localFnTree});
+			socket.emit('node', {path: path, tree: localFnTree});
 			debug('client requested node ' + path + 'which was sent as: ', localFnTree);
 
 		});
 
-		clientKnownChannels[socket.id] = [];
+		socket.on('noSuchNode', function(path) {
+			var dfd = socket.remoteNodes[path];
+			var err = new Error('Node is not defined on the client');
+			err.path = path;
+			dfd.reject(err);
+		});
+
 		var timeoutId;
 
 		socket.on('disconnect', function() {
-			timeoutId = setTimeout(function () {
+			timeoutId = setTimeout(function() {
 				debug("cleaning client channels of " + socket.id);
-				var throwErr = function () {
+				var throwErr = function() {
 					throw new Error('Client channel disconnected, this channel is not available anymore')
 				};
-				traverse(fnTree).map(function (node){
+				traverse(fnTree).map(function(node) {
 					if (this.isLeaf) {
 						this.update(throwErr);
 					}
 				});
-				delete clientChannels[socket.id];   //cleaning up in disconnect
-				delete clientKnownChannels[socket.id]; //cleaning up in disconnect
+
 			}, 300000); // after five minutes, get rid of client channels
 		});
 
-    socket.on('resolve', function (data) {
-      deferreds[data.Id].resolve(data.value);
-      callToClientEnded(data.Id);
-    });
-    socket.on('reject', function (data) {
-      deferreds[data.Id].reject(data.reason);
-      callToClientEnded(data.Id);
-    });
+		socket.on('resolve', function(data) {
+			deferreds[data.Id].resolve(data.value);
+			remoteCallEnded(data.Id);
+		});
+		socket.on('reject', function(data) {
+			deferreds[data.Id].reject(data.reason);
+			remoteCallEnded(data.Id);
+		});
 
-
-		socket.on('reconnect', function () {
+		socket.on('reconnect', function() {
 			if (timeoutId) {
 				clearTimeout(timeoutId);
 			}
 			var thisClientChnls = clientChannels[socket.id];
 			if (!thisClientChnls) {
 				socket.emit('reexposeChannels');
-			} else {
-				var index = thisClientChnls.length;
-				while(index--) {
-					socket.emit('clientChannelCreated', thisClientChnls[index].name);
-				}
 			}
 		});
 
+		socket.remoteNodes = {}
+		socket.rpc = function prepareRemoteCall(fnPath) {
+			return function remoteCall() {
+				var dfd = Promise.defer();
 
+				if (!socket.connected) {
+					dfd.reject(new Error('client ' + socket.id + ' disconnected, call rejected'));
+					return dfd.promise;
+				}
+				invocationCounter++;
+				lldebug('calling ', fnPath, 'on ', socket.id, ', invocation counter ', invocationCounter)
+				socket.emit('call',
+					{Id: invocationCounter, fnPath: fnPath, args: Array.prototype.slice.call(arguments, 0)}
+				);
+				deferreds[invocationCounter] = dfd;
 
-		socket.rpc = {
-			call: function(path) {
-				return new Promise(function(resolve, reject) {
-
+				return dfd.promise;
+			};
+		};
+		socket.rpc.fetchNode = function(path) {
+			socket.on('disconnect', function onDisconnect() {
+				socket.connected = false;
+				deferreds.forEach(function(dfd, id) {
+					dfd.reject(new Error('client ' + socket.id + ' disconnected before returning, call rejected'));
+					remoteCallEnded(id);
 				});
-			},
-			fetchNode: function() {
-				//TODO
+			});
 
-				socket.on('disconnect', function onDisconnect() {
-					var err = function () {
-						throw new Error('Client channel disconnected, this channel is not available anymore')
-					};
-					for (var method in channel.fns) {
-						channel.fns[method] = err;	// references to client channel might be hold in client code, so we need to invalidate them
-					}
-					debug("disconnected clc " + name);
-				});
+			var remoteNodes = socket.remoteNodes;
+			if (remoteNodes.hasOwnProperty(path)) {
+				return remoteNodes[path].promise;
+			} else {
+				var def = Promise.defer();
+				remoteNodes[path] = def;
+				socket.emit('fetchNode', path);
+				return def.promise;
 			}
+
 		};
 	});
 
-	var clientKnownChannels = {};
+
+
 	var deferreds = [];
 
 	var clientChannels = {};
 
-
 	var invocationCounter = 0;
 	var endCounter = 0;
-	var callToClientEnded = function (Id) {
+	var remoteCallEnded = function(Id) {
 		if (deferreds[Id]) {
 			delete deferreds[Id];
 			endCounter++;
@@ -181,7 +208,7 @@ function RPCserver(port, fnTree) {
 		}
 	};
 
-	expApp.get('/rpc/*', function (req, res){
+	expApp.get('/rpc/*', function(req, res) {
 		var nodePath = '';
 		var fnNames = traverse(fnTree).get(nodePath);
 
