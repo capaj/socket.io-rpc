@@ -4,10 +4,10 @@ node_js:
 - 'iojs'
 before_install:
   - cd simple-example && npm install --ignore-scripts && cd ..
-deploy:
-  provider: npm
-  email: capajj@gmail.com
-  on:
-    tags: true
-    repo: capaj/socket.io-rpc
-    all_branches: true
+#deploy:
+#  provider: npm
+#  email: capajj@gmail.com
+#  on:
+#    tags: true
+#    repo: capaj/socket.io-rpc
+#    all_branches: true

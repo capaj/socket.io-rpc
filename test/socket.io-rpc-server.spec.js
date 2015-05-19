@@ -21,6 +21,17 @@ describe('server calling connected client', function() {
 		});
 	});
 
+	it('should have 3 methods on root node', function(){
+		return socket.rpc.fetchNode('').then(function(remoteMethods){
+			(typeof remoteMethods.erroringMethod).should.equal('function');
+			(typeof remoteMethods.returningPromise).should.equal('function');
+			(typeof remoteMethods.fnOnClient).should.equal('function');
+		}, function(err) {
+			throw err;
+		});
+
+	});
+
 	it('should properly call to client and return', function() {
 
 		return socket.rpc('fnOnClient')().then(function(ret) {
@@ -37,6 +48,14 @@ describe('server calling connected client', function() {
 			err.message.should.equal('Node is not defined on the client');
 			err.path.should.equal('weDidNotDefineIt');
 		})
+	});
+
+	it('should reject when client has an error thrown', function() {
+		return socket.rpc('erroringMethod')().then(function(ret) {
+			throw new Error('this must not resolve');
+		}, function(err) {
+			err.message.should.equal('notdefined is not defined');
+		});
 	});
 
 	it('client methods should no longer be callable after client disconnects', function(done) {

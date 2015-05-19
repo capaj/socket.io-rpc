@@ -12,13 +12,12 @@ var path = require('path');
 
 /**
  * @param {Number} port
- * @param {Object} fnTree
  * @returns {{expose: Function, loadClientChannel: Function, channel: Object}} rpc backend instance
  */
-function RPCserver(port, fnTree) {
+function RPCserver(port) {
 	var expApp = express();
 	var server = expApp.listen(port);
-
+	var self = this;
 	var io = socketIO.listen(server);
 
 	this.io = io.of('/rpc');
@@ -28,7 +27,7 @@ function RPCserver(port, fnTree) {
 		var invocationRes = function(data) {
 			lldebug('invocation of ', data.fnPath);
 			try {
-				var method = traverse(fnTree).get(data.fnPath.split('.'));
+				var method = traverse(self.tree).get(data.fnPath.split('.'));
 			} catch (err) {
 				debug('error when resolving an invocation', err);
 			}
@@ -42,10 +41,11 @@ function RPCserver(port, fnTree) {
 				var retVal;
 				try {
 					retVal = method.apply(socket, data.args);
-				} catch (e) {
+				} catch (err) {
 					//we explicitly print the error into the console, because uncatched errors should not occur
 					console.error('RPC method ' + data.fnPath + '  thrown an error : ', e);
-					retVal = e;
+					socket.emit('reject', {Id: data.Id, reason: err.toJSON()});
+					return;
 				}
 				/* NOTE: Will return true for *any thenable object*, and isn't truly safe, since it will access the `then` property*/
 				if (retVal && typeof retVal.then === 'function') {    // this is async function, so 'return' is emitted after it finishes
@@ -79,9 +79,11 @@ function RPCserver(port, fnTree) {
 
 		socket.on('fetchNode', function(path) {
 
-			var methods = fnTree;
+			var methods = self.tree;
 			if (path) {
-				methods = traverse(fnTree).get(path.split('.'));
+				methods = traverse(self.tree).get(path.split('.'));
+			} else {
+				methods = self.tree;
 			}
 
 			if (!methods) {
@@ -98,8 +100,53 @@ function RPCserver(port, fnTree) {
 			});
 
 			socket.emit('node', {path: path, tree: localFnTree});
-			debug('client requested node ' + path + 'which was sent as: ', localFnTree);
+			debug('client requested node "' + path + '" which was sent as: ', localFnTree);
 
+		});
+
+		/**
+		 * @param {String} fnPath
+		 * @returns {Function}
+		 */
+		function prepareRemoteCall(fnPath) {
+			return function remoteCall() {
+				var dfd = Promise.defer();
+
+				if (!socket.connected) {
+					dfd.reject(new Error('client ' + socket.id + ' disconnected, call rejected'));
+					return dfd.promise;
+				}
+				invocationCounter++;
+				lldebug('calling ', fnPath, 'on ', socket.id, ', invocation counter ', invocationCounter)
+				socket.emit('call',
+					{Id: invocationCounter, fnPath: fnPath, args: Array.prototype.slice.call(arguments, 0)}
+				);
+				deferreds[invocationCounter] = dfd;
+
+				return dfd.promise;
+			};
+		}
+
+		socket.rpc = prepareRemoteCall;
+
+		socket.on('node', function(data) {
+			if (socket.remoteNodes[data.path]) {
+				var remoteMethods = traverse(data.tree).map(function(el) {
+					if (this.isLeaf) {
+						var path = this.path;
+						if (data.path) {
+							path = data.path + '.' + path;
+						}
+
+						this.update(prepareRemoteCall(path));
+					}
+				});
+				var promise = socket.remoteNodes[data.path];
+				socket.remoteNodes[data.path] = remoteMethods;
+				promise.resolve(remoteMethods);
+			} else {
+				throw new Error("server sent a node which was not requested");
+			}
 		});
 
 		socket.on('noSuchNode', function(path) {
@@ -110,21 +157,6 @@ function RPCserver(port, fnTree) {
 		});
 
 		var timeoutId;
-
-		socket.on('disconnect', function() {
-			timeoutId = setTimeout(function() {
-				debug("cleaning client channels of " + socket.id);
-				var throwErr = function() {
-					throw new Error('Client channel disconnected, this channel is not available anymore')
-				};
-				traverse(fnTree).map(function(node) {
-					if (this.isLeaf) {
-						this.update(throwErr);
-					}
-				});
-
-			}, 300000); // after five minutes, get rid of client channels
-		});
 
 		socket.on('resolve', function(data) {
 			deferreds[data.Id].resolve(data.value);
@@ -145,25 +177,13 @@ function RPCserver(port, fnTree) {
 			}
 		});
 
-		socket.remoteNodes = {}
-		socket.rpc = function prepareRemoteCall(fnPath) {
-			return function remoteCall() {
-				var dfd = Promise.defer();
+		socket.remoteNodes = {};
 
-				if (!socket.connected) {
-					dfd.reject(new Error('client ' + socket.id + ' disconnected, call rejected'));
-					return dfd.promise;
-				}
-				invocationCounter++;
-				lldebug('calling ', fnPath, 'on ', socket.id, ', invocation counter ', invocationCounter)
-				socket.emit('call',
-					{Id: invocationCounter, fnPath: fnPath, args: Array.prototype.slice.call(arguments, 0)}
-				);
-				deferreds[invocationCounter] = dfd;
-
-				return dfd.promise;
-			};
-		};
+		/**
+		 *
+		 * @param path
+		 * @returns {*}
+		 */
 		socket.rpc.fetchNode = function(path) {
 			socket.on('disconnect', function onDisconnect() {
 				socket.connected = false;
@@ -185,7 +205,6 @@ function RPCserver(port, fnTree) {
 
 		};
 	});
-
 
 
 	var deferreds = [];
@@ -210,7 +229,7 @@ function RPCserver(port, fnTree) {
 
 	expApp.get('/rpc/*', function(req, res) {
 		var nodePath = '';
-		var fnNames = traverse(fnTree).get(nodePath);
+		var fnNames = traverse(self.tree).get(nodePath);
 
 		res.type('application/javascript; charset=utf-8');
 		var fullUrl = "'" + req.protocol + '://' + req.get('host') + "'";
@@ -223,8 +242,14 @@ function RPCserver(port, fnTree) {
 
 	});
 
-	this.tree = fnTree;
+	this.tree = {};
 	this.expressApp = expApp;
+	/**
+	 * @param toExtendWith {Object}
+	 */
+	this.expose = function(toExtendWith) {
+		_.assign(self.tree, toExtendWith);
+	};
 
 }
 
