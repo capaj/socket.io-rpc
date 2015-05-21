@@ -7,7 +7,7 @@ rpc.expose({
 		console.log('called client method');
 		return 42;
 	},
-	returningPromise: function() {
+	asyncOnClient: function() {
 		return new Promise(function(resolve, reject) {
 			setTimeout(function(){
 				resolve('resolved after 40ms');

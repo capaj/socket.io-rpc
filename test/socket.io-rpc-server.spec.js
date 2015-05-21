@@ -24,7 +24,7 @@ describe('server calling connected client', function() {
 	it('should have 3 methods on root node', function(){
 		return socket.rpc.fetchNode('').then(function(remoteMethods){
 			(typeof remoteMethods.erroringMethod).should.equal('function');
-			(typeof remoteMethods.returningPromise).should.equal('function');
+			(typeof remoteMethods.asyncOnClient).should.equal('function');
 			(typeof remoteMethods.fnOnClient).should.equal('function');
 		}, function(err) {
 			throw err;
@@ -32,11 +32,19 @@ describe('server calling connected client', function() {
 
 	});
 
-	it('should properly call to client and return', function() {
+	it('should properly call to client and return synchronous function', function() {
 
 		return socket.rpc('fnOnClient')().then(function(ret) {
 			console.log("client returned: " + ret);
 			ret.should.equal(42);
+		});
+
+	});
+
+	it('should properly call to client and return async function', function() {
+
+		return socket.rpc('asyncOnClient')().then(function(ret) {
+			ret.should.equal('resolved after 40ms');
 		});
 
 	});

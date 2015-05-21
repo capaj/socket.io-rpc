@@ -46,8 +46,8 @@ function RPCserver(port) {
 					socket.emit('reject', {Id: data.Id, reason: err.toJSON()});
 					return;
 				}
-				/* NOTE: Will return true for *any thenable object*, and isn't truly safe, since it will access the `then` property*/
-				if (retVal && typeof retVal.then === 'function') {    // this is async function, so 'return' is emitted after it finishes
+
+				if (retVal instanceof Promise) {    // this is async function, so 'return' is emitted after it finishes
 					retVal.then(function(asyncRetVal) {
 						socket.emit('resolve', {Id: data.Id, value: asyncRetVal});
 					}, function(error) {
@@ -55,7 +55,6 @@ function RPCserver(port) {
 							error = error.toJSON();
 						}
 						socket.emit('reject', {Id: data.Id, reason: error});
-
 					});
 				} else {
 					//synchronous
