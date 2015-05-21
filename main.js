@@ -24,18 +24,17 @@ function RPCserver(port) {
 
 	this.io.on('connect', function(socket) {
 		lldebug("connected socket.id ", socket.id);
-		var invocationRes = function(data) {
-			lldebug('invocation of ', data.fnPath);
+		socket.on('call', function(data) {
+			lldebug('invocation with ', data);
+			if (!(data && typeof data.Id === 'number')) {
+				return socket.emit('rpcError', {
+					reason: 'Id is a required property for a call data payload'
+				});
+			}
 			try {
 				var method = traverse(self.tree).get(data.fnPath.split('.'));
 			} catch (err) {
 				debug('error when resolving an invocation', err);
-			}
-			if (!Number.isInteger(data.id)) {
-				socket.emit('rpcError', {
-					reason: new TypeError('id is a required property for a call data payload')
-						.toJSON()
-				});
 			}
 			if (method && method.apply) {	//we could also check if it is a function, but this might be bit faster
 				var retVal;
@@ -73,9 +72,7 @@ function RPCserver(port) {
 					reason: new Error('function is not exposed: ' + data.fnPath).toJSON()
 				});
 			}
-		};
-
-		socket.on('call', invocationRes);
+		});
 
 		socket.on('fetchNode', function(path) {
 
