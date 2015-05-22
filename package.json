@@ -28,7 +28,7 @@
     "dom-storage": "^2.0.1",
     "error-tojson": "0.0.1",
     "express": "~4",
-    "lodash": "2.4.1",
+    "lodash": "3.9",
     "socket.io": "^1",
     "traverse": "^0.6.6"
   },
