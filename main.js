@@ -31,10 +31,15 @@ function RPCserver(port) {
 					reason: 'Id is a required property for a call data payload'
 				});
 			}
+			var emitRes = function(type, resData) {
+				resData.Id = data.Id;
+				socket.emit(type, resData)
+			};
 			try {
 				var method = traverse(self.tree).get(data.fnPath.split('.'));
 			} catch (err) {
 				debug('error when resolving an invocation', err);
+				return emitRes('reject', {reason: err.toJSON()});
 			}
 			if (method && method.apply) {	//we could also check if it is a function, but this might be bit faster
 				var retVal;
@@ -43,33 +48,32 @@ function RPCserver(port) {
 				} catch (err) {
 					//we explicitly print the error into the console, because uncatched errors should not occur
 					console.error('RPC method ' + data.fnPath + '  thrown an error : ', e);
-					socket.emit('reject', {Id: data.Id, reason: err.toJSON()});
+					emitRes('reject', {reason: err.toJSON()});
 					return;
 				}
 
 				if (retVal instanceof Promise) {    // this is async function, so 'return' is emitted after it finishes
 					retVal.then(function(asyncRetVal) {
-						socket.emit('resolve', {Id: data.Id, value: asyncRetVal});
+						emitRes('resolve', {value: asyncRetVal});
 					}, function(error) {
 						if (error instanceof Error) {
 							error = error.toJSON();
 						}
-						socket.emit('reject', {Id: data.Id, reason: error});
+						emitRes('reject', {reason: error});
 					});
 				} else {
 					//synchronous
 					if (retVal instanceof Error) {
-						socket.emit('reject', {Id: data.Id, reason: retVal.toString()});
+						emitRes('reject', {reason: retVal.toString()});
 					} else {
-						socket.emit('resolve', {Id: data.Id, value: retVal});
+						emitRes('resolve', {value: retVal});
 					}
 				}
 
 			} else {
-				socket.emit('reject', {
-					Id: data.Id,
-					reason: new Error('function is not exposed: ' + data.fnPath).toJSON()
-				});
+				var msg = 'function is not exposed: ' + data.fnPath;
+				debug(msg);
+				emitRes('reject', {reason: new Error(msg).toJSON()});
 			}
 		});
 
@@ -129,7 +133,7 @@ function RPCserver(port) {
 			if (socket.remoteNodes[data.path]) {
 				var remoteMethods = traverse(data.tree).map(function(el) {
 					if (this.isLeaf) {
-						var path = this.path;
+						var path = this.path.join('.');
 						if (data.path) {
 							path = data.path + '.' + path;
 						}
