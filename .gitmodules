@@ -1,0 +1,3 @@
+[submodule "socket.io-rpc-event-handlers"]
+	path = socket.io-rpc-event-handlers
+	url = https://github.com/capaj/socket.io-rpc-event-handlers.git

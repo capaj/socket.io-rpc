@@ -3,12 +3,11 @@ var express = require('express');
 var socketIO = require('socket.io');
 var traverse = require('traverse');
 
-var Promise = require('bluebird');
 var logger = require('debug');
 var debug = logger('socket.io-rpc:main');
 var assign = require('lodash.assign');
 var path = require('path');
-var socketEventHandlers = require('./lib/socket-event-handlers');
+var socketEventHandlers = require('./socket.io-rpc-event-handlers/socket-event-handlers');
 /**
  * @param {Number} port
  * @returns {{expose: Function, loadClientChannel: Function, channel: Object}} rpc backend instance
