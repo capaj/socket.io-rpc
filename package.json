@@ -9,9 +9,6 @@
     "test": "mocha"
   },
   "main": "./main.js",
-  "jspm": {
-	"main": "lib/socket-event-handlers.js"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/capaj/socket.io-rpc.git"
