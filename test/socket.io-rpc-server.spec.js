@@ -54,7 +54,7 @@ describe('server calling connected client', function() {
 		return socket.rpc.fetchNode('weDidNotDefineIt').then(function() {
 			throw new Error('This should not have resolved');
 		}, function(err) {
-			err.message.should.equal('Node is not defined on the client');
+			err.message.should.match(/Node is not defined on the socket (.*)/);
 			err.path.should.equal('weDidNotDefineIt');
 		})
 	});
@@ -73,14 +73,14 @@ describe('server calling connected client', function() {
 		socket.rpc('fnOnClient')().then(function() {
 			throw new Error('This should not have resolved');
 		}, function(err) {
-			err.message.should.match(/client (.*) disconnected before returning, call rejected/);
+			err.message.should.match(/socket (.*) disconnected before returning, call rejected/);
 			done();
 		});
 		setTimeout(function(){
 			socket.rpc('fnOnClient')().then(function() {
 				throw new Error('This should not have resolved');
 			}, function(err) {
-				err.message.should.match(/client (.*) disconnected, call rejected/);
+				err.message.should.match(/socket (.*) disconnected, call rejected/);
 				done();
 			});
 		}, 100);

@@ -7,11 +7,7 @@ Main purpose is to make it more easier to structure your code for browser-server
 
 With socket.io-rpc, you just expose a channel of functions and then call those as if they were regular async functions defined on your side, socket.io-rpc automatically resolves a promise on other side, when function returns or returned promise is resolved. It even propagates errors(thrown and returned), so you get error handling almost for free.
 
-Has three client libraries(which sit in separate [repo](https://github.com/capaj/socket.io-rpc-client)/[npm package](https://www.npmjs.com/package/socket.io-rpc-client)):
-* for browser
-* for AngularJS
-* for node
-
+Has an isomorphic(browser or node) client library(which sits in separate [repo](https://github.com/capaj/socket.io-rpc-client)/[npm package](https://www.npmjs.com/package/socket.io-rpc-client)).
 Client side library has to be installed via [JSPM](https://github.com/jspm/jspm-cli).
 
 #Simple example
@@ -25,7 +21,7 @@ Then run it from git repo root:
 
 ## Usage example
 
-###Serverside server
+###Serverside
 ```javascript
  var rpcClient = require('socket.io-rpc-client');
  
@@ -65,18 +61,11 @@ Then run it from git repo root:
     <script src="jspm_packages/system.js"></script>
     <script src="config.js"></script> //needs to have bluebird and socket.io-client, look into simple_example folder
     <script type="text/javascript">
-        //as commonJS module
-        System.import('rpc/myChannel').then(function(channel) {
-             channel.getTime().then(function (date) {
-                  console.log('get time on module loaded as cjs module: ' + date);
-              });
-        });
-        //load manually with rpc client
         System.import('socket.io-rpc-client').then(function(backend) { /
             console.log("rpc server channel loaded");
-            backend.loadChannel('myChannel')
-                    .then(function (channel) {
-                          channel.getTime().then(function (date) {
+            backend.loadChannel('')
+                    .then(function (root) {
+                          root.getTime().then(function (date) {
                               console.log('time on server is: ' + date);
 
                           });
@@ -112,54 +101,6 @@ Then run it from git repo root:
         });
     </script>
 ```
-###In browser for AngularJS
-```html
-    <body>
-        <h1>Angular socket.io-rpc test/showcase</h1>
-        <!--You can also use regular ng-controller, but then you have to load channel yourself by calling $rpc.loadChannel('myChannel'); inside it-->
-        <div rpc-controller="testCtrl" rpc-channel="myChannel">
-            getTime: <span ng-bind="serverTime"></span><br>
-            asyncTest: {{ asyncTest }}
-        </div>
-
-    </body>
-     <script type="text/javascript" src="angular.js"></script>
-       <script src="jspm_packages/system.js"></script>
-       <script src="config.js"></script>
-       <script type="text/javascript">
-           System.import('socket.io-rpc-client/socket.io-rpc-client-angular').then(function(RPC) {
-                angular.module('app', ['RPC']).controller('testCtrl', function ($scope, myChannel) {
-
-                myChannel.getTime().then(function (date) {
-                    console.log('time on server is: ' + date);
-                    $scope.serverTime = date;
-                    //no need to call $scope.$apply, because it is called in $rpc;
-                });
-                myChannel.myAsyncTest('passing string as argument').then(function (retVal) {
-                    console.log('server returned: ' + retVal);
-                    $scope.asyncTest = retVal;
-                });
-                console.log('ctr ' + new Date().toJSON());
-           }).run(
-               function ($rpc, $rootScope) {
-                   var localRPC = $rpc('http://localhost:8080');   // don't forget port, if you are not on 80
-                   console.log('run ' + new Date().toJSON());
-                       localRPC.expose('clientChannel', {
-                       fnOnClient: function (param) {
-                           return 'whatever you need from client returned ' + param;
-                       }
-                   }).then(
-                       function (channel) {
-                           console.log(" client channel ready");
-                       }
-                   );
-               }
-           );
-
-        var injector = angular.bootstrap(document, ['app']);
-
-    </script>
-```
 
 ###With authentication (server)
 
@@ -168,7 +109,7 @@ Set authentication normally as you would with [socket.io](http://socket.io/docs/
 
 ###With authentication (browser)
 
-Send your auth token with the backend connect method(the one that is exported from the module/angular factory).
+Send your auth token with the backend connect method(the one that is exported from the module).
 
 ## Browser support
     numbers are for both clients(vanilla and Angular):
@@ -179,9 +120,9 @@ Send your auth token with the backend connect method(the one that is exported fr
 ## Internal callbacks on client
 There are 4 internal callbacks, which might help you in case you need to be notified of a request beginning and ending:
 
-    onBatchStarts   //called when invocation counter equals 1
-    onBatchEnd      //called when invocation counter equals endCounter
-    onCall          //called when one call is made to server
-    onEnd           //called when one call is returned
+    batchStarts   //called when invocation counter equals 1
+    batchEnds      //called when invocation counter equals endCounter
+    call          //called when one call is made to server
+    response           //called when a call response is fired
 
 
