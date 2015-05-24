@@ -5,10 +5,11 @@ var express = require('express');
 var cp = require('child_process');
 var port = 8032;
 
-var rpcApp = new RPC(port, {});
+var rpcApp = new RPC(port);
 
 var app = rpcApp.expressApp;
 var client = cp.fork('./test-utils/client-test-sample.js');
+
 var socket;
 describe('server calling connected client', function() {
 	this.timeout(8000);

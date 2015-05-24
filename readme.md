@@ -27,27 +27,26 @@ Then run it from git repo root:
 
 ###Serverside server
 ```javascript
-    var io = require('socket.io').listen(server);
-    // you should be able to use any other http://promises-aplus.github.io/promises-spec/ compliant library, but I would greatly recommend using bluebird
-    var Promise = require('bluebird');
-    var rpc = require('socket.io-rpc');
-
-    var rpcMaster = rpc(io, app)
-    	.expose('myChannel', {
-        //plain JS function
-        getTime: function () {
-            console.log('Client ID is: ' + this.id);
-            return new Date();
-        },
-        //returns a promise, which when resolved will resolve promise on client-side with the result(with the middle step in JSON over socket.io)
-        myAsyncTest: function (param) {
-            var deffered = Promise.defer();
-            setTimeout(function(){
-                deffered.resolve("String generated asynchronously serverside with " + param);
-            },1000);
-            return deffered.promise;
-        }
-    });
+ var rpcClient = require('socket.io-rpc-client');
+ 
+ var server = rpcClient('http://localhost:8032');
+ 
+ server.expose({
+ 	fnOnClient: function() {
+ 		console.log('called client method');
+ 		return 42;
+ 	},
+ 	asyncOnClient: function() {
+ 		return new Promise(function(resolve, reject) {
+ 			setTimeout(function(){
+ 				resolve('resolved after 40ms');
+ 			}, 40);
+ 		});
+ 	},
+ 	erroringMethod: function() {
+ 		notdefined.error.will.propagate;
+ 	}
+ });
 
 
     io.sockets.on('connection', function (socket) {
