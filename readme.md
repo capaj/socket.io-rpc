@@ -76,16 +76,11 @@ Then run it from git repo root:
                         console.log(err + ' equals TypeError: Object #<Object> has no method nonExistentRemoteFn');
                     });
 
-            backend.expose('clientChannel', {
+            rpc.expose({
                 fnOnClient: function (param) {
                     return 'whatever you need from client returned ' + param;
                 }
-            }).then(function (channel) {
-                        console.log(" client channel ready");
-                    }, function (err) {
-                        debugger;
-                    }
-            );
+            });
 
             function setText(elem, changeVal) {
                 if ((elem.textContent) && (typeof (elem.textContent) != "undefined")) {
