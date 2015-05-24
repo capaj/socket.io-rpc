@@ -62,8 +62,8 @@ Then run it from git repo root:
     <script src="config.js"></script> //needs to have bluebird and socket.io-client, look into simple_example folder
     <script type="text/javascript">
         System.import('socket.io-rpc-client').then(function(backend) { /
-            console.log("rpc server channel loaded");
-            backend.loadChannel('')
+            var rpc = rpcClient('http://localhost:8032');
+            rpc.fetchNode('')
                     .then(function (root) {
                           root.getTime().then(function (date) {
                               console.log('time on server is: ' + date);
