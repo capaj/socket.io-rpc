@@ -16,6 +16,9 @@ rpc.expose({
 	},
 	erroringMethod: function() {
 		notdefined.error.will.propagate;
+	},
+	callTextTestOnServer: function() {
+		return rpc('textTest')();
 	}
 });
 

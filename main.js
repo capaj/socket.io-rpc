@@ -13,7 +13,15 @@ function RPCserver(port) {
 	var server = expApp.listen(port);
 	var io = socketIO.listen(server);
 
-	var rpcServer = {io: io.of('/rpc')};
+	var rpcServer = {
+		io: io.of('/rpc'),
+		/**
+		 * @param toExtendWith {Object}
+		 */
+		expose: function(toExtendWith) {
+			assign(tree, toExtendWith);
+		}
+	};
 	var tree = {};
 	rpcServer.io.on('connect', function(socket) {
 		assign(rpcServer, socketEventHandlers(socket, tree));

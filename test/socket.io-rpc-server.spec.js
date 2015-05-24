@@ -5,7 +5,7 @@ var express = require('express');
 var cp = require('child_process');
 var port = 8032;
 
-var rpcApp = new RPC(port);
+var rpcApp = RPC(port);
 
 var app = rpcApp.expressApp;
 var client = cp.fork('./test-utils/client-test-sample.js');
@@ -22,18 +22,32 @@ describe('server calling connected client', function() {
 		});
 	});
 
-	it('should have 3 methods on root node', function(){
+	it('should be able to expose functions,  ', function() {
+		rpcApp.expose({
+			textTest: function() {
+				return 'from server';
+			}
+		});
+	});
+
+	it('should get a copy of methods on root node on the client', function(){
 		return socket.rpc.fetchNode('').then(function(remoteMethods){
 			(typeof remoteMethods.erroringMethod).should.equal('function');
+			(typeof remoteMethods.callTextTestOnServer).should.equal('function');
 			(typeof remoteMethods.asyncOnClient).should.equal('function');
 			(typeof remoteMethods.fnOnClient).should.equal('function');
 		}, function(err) {
 			throw err;
 		});
-
 	});
 
-	it('should properly call to client and return synchronous function', function() {
+	it('should allow clients to call exposed functions', function() {
+		return socket.rpc('callTextTestOnServer')().then(function(ret) {
+			ret.should.equal('from server');
+		});
+	});
+
+	it('should properly call to client and return a synchronous function', function() {
 
 		return socket.rpc('fnOnClient')().then(function(ret) {
 			console.log("client returned: " + ret);
