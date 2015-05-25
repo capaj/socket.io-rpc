@@ -1,5 +1,3 @@
-var Promise = require('bluebird');
-
 module.exports = {
 	//plain JS function
 	getTime: function() {
@@ -8,17 +6,17 @@ module.exports = {
 	},
 	//returns a promise, which when resolved will resolve promise on client-side with the result
 	myAsyncTest: function(param) {
-		var deffered = Promise.defer();
-		setTimeout(function() {
-			deffered.resolve("String generated asynchronously serverside with " + param);
-		}, 1000);
-		return deffered.promise;
+		return new Promise(function(resolve, reject) {
+			setTimeout(function(){
+				resolve("String generated asynchronously serverside with " + param);
+			}, 40);
+		});
 	},
 	failingMethod: function() {
-		var deffered = Promise.defer();
-		setTimeout(function() {
-			deffered.reject(new Error("Sample error"));
-		}, 2000);
-		return deffered.promise;
+		return new Promise(function(resolve, reject) {
+			setTimeout(function(){
+				reject(new Error("Sample error"));
+			}, 40);
+		});
 	}
 };

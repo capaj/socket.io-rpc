@@ -24,7 +24,7 @@ function RPCserver(port) {
 	};
 	var tree = {};
 	rpcServer.io.on('connect', function(socket) {
-		assign(rpcServer, socketEventHandlers(socket, tree));
+		assign(rpcServer, socketEventHandlers(socket, tree, 'server'));
 	});
 
 	rpcServer.expressApp = expApp;
