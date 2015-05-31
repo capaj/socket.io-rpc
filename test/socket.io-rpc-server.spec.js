@@ -64,6 +64,15 @@ describe('server calling connected client', function() {
 
 	});
 
+	it('should throw type error when trying to expose anything else than an object', function(){
+		try{
+			rpcApp.expose('string');
+		}catch(err){
+			err.message.should.equal('object expected as first argument');
+		}
+
+	});
+
 	it('should reject when trying to fetch a node which does not exist', function() {
 		return socket.rpc.fetchNode('weDidNotDefineIt').then(function() {
 			throw new Error('This should not have resolved');

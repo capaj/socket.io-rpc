@@ -19,6 +19,9 @@ function RPCserver(port) {
 		 * @param toExtendWith {Object}
 		 */
 		expose: function(toExtendWith) {
+			if (typeof toExtendWith !== 'object') {
+				throw new TypeError('object expected as first argument');
+			}
 			assign(tree, toExtendWith);
 		}
 	};
