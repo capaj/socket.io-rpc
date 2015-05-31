@@ -24,7 +24,6 @@
   ],
   "dependencies": {
     "debug": "^2.2",
-    "dom-storage": "^2.0.1",
     "error-tojson": "0.0.1",
     "express": "~4",
     "o.extend": "^1.0.0",
