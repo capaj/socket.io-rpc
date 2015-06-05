@@ -3,10 +3,10 @@
 [![Dependency Status](https://david-dm.org/capaj/socket.io-rpc.svg)](https://david-dm.org/capaj/socket.io-rpc) [![devDependency Status](https://david-dm.org/capaj/socket.io-rpc/dev-status.svg)](https://david-dm.org/capaj/socket.io-rpc#info=devDependencies)
 
 
-It is a minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io and bluebird.js.
-Main purpose is to make it more easier to structure your code for browser-server realtime interaction. Typical example is when you need to call a function on the server from client and get the return value from that function back to the client. With raw socket.io, you need to register few events and emit them at the right moment. This can get complicated quite easily, especially for async operations. 
+It is a minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io.
+Main purpose is to make it more easier to structure your async code for browser-server realtime interaction. Typical example is when you need to call a function on the server from client and get the return value from that function back to the client. With raw socket.io, you need to register few events and emit them at the right moment. This can get complicated quite easily, especially for async operations and error handling. Thanks to promises(and try/catch for sync operations), this library knows when a computation failed or suceeded. 
 
-With socket.io-rpc, you just expose a channel of functions and then call those as if they were regular async functions defined on your side, socket.io-rpc automatically resolves a promise on other side, when function returns or returned promise is resolved. It even propagates errors(thrown and returned), so you get error handling almost for free.
+With socket.io-rpc, you just expose a tree of functions and then call those, socket.io-rpc automatically resolves a promise on other side, when function returns or returned promise is resolved. It even propagates errors(thrown and returned), so you get error handling almost for free.
 
 Has an isomorphic(browser or node) client library(which sits in separate [repo](https://github.com/capaj/socket.io-rpc-client)/[npm package](https://www.npmjs.com/package/socket.io-rpc-client)).
 Client side library has to be installed via [JSPM](https://github.com/jspm/jspm-cli).
