@@ -5,16 +5,19 @@ var express = require('express');
 var cp = require('child_process');
 var port = 8032;
 
-var rpcApp = RPC(port);
+var rpcApp;
 
-var app = rpcApp.expressApp;
 var client = cp.fork('./test-utils/client-test-sample.js');
 
 var socket;
 describe('server calling connected client', function() {
 	this.timeout(8000);
 
-	before(function(done) {
+	it('should have the same signature as express.js listen-you can pass a callback to be triggered when server starts listening', function(done){
+		rpcApp = RPC(port, done);
+	});
+
+	it('should trigger a connection event when client connects', function(done) {
 
 		rpcApp.io.on('connection', function(_socket_) {
 			socket = _socket_;
