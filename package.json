@@ -1,6 +1,6 @@
 {
   "name": "socket.io-rpc",
-  "version": "0.9.9",
+  "version": "1.0.0",
   "private": false,
   "author": "capaj <capajj@gmail.com>",
   "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
@@ -16,7 +16,7 @@
     "url": "https://github.com/capaj/socket.io-rpc.git"
   },
   "engines": {
-    "node": "^0.12.0"
+    "node": ">0.12.0"
   },
   "keywords": [
     "socket.io",
@@ -27,7 +27,6 @@
   "dependencies": {
     "debug": "^2.2",
     "error-tojson": "0.0.1",
-    "express": "~4",
     "o.extend": "^1.0.0",
     "socket.io": "^1",
     "traverse": "^0.6.6"
