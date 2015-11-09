@@ -26,7 +26,6 @@
   ],
   "dependencies": {
     "debug": "^2.2",
-    "error-tojson": "0.0.1",
     "o.extend": "^1.0.0",
     "socket.io": "^1",
     "traverse": "^0.6.6"
@@ -38,5 +37,11 @@
     "socket.io-rpc-client": "^0.9.8",
     "standard": "^5.3.1",
     "systemjs-builder": "^0.5"
-  }
+  },
+	"standard": {
+	  "ignore": [
+	    "simple-example/**",
+			"console-shim.js"
+	  ]
+	}
 }

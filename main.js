@@ -1,4 +1,3 @@
-require('error-tojson')
 require('o.extend')
 
 var socketIO = require('socket.io')
@@ -12,10 +11,10 @@ var socketEventHandlers = require('./socket.io-rpc-event-handlers/socket-event-h
  */
 function RPCserver () {
   var server
-  if(typeof arguments[0] === 'number') {
+  if (typeof arguments[0] === 'number') {
     server = require('http').createServer()
     server.listen.apply(server, arguments)
-  }else {
+  } else {
     server = arguments[0]
   }
 
