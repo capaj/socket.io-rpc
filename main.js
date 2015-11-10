@@ -18,7 +18,7 @@ function RPCserver () {
     server = arguments[0]
   }
 
-  var io = socketIO(server)
+  var io = socketIO(server, arguments[1])
 
   var rpcServer = {
     io: io.of('/rpc'),
