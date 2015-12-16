@@ -13,7 +13,7 @@ With socket.io-rpc, you just expose a tree of functions and then call those, soc
 
 ### Why promises over network rather than HTTP codes? 
 
-Because they are much more real abstraction on what you need. Any long running job over the network is basically a promise. Trying to map possible errors to available HTTP codes is mostly a fool's errand.
+Because they are more real abstraction on long running tasks over the network. Trying to map all possible error and their causes to available HTTP codes is impossible for any but simplest of web applications.
 
 #Simple example
 Folder with example can be run after installing all dependencies like this in the simple-example folder:
