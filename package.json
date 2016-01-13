@@ -1,6 +1,6 @@
 {
   "name": "socket.io-rpc",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": false,
   "author": "capaj <capajj@gmail.com>",
   "description": "Minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io",
@@ -35,7 +35,7 @@
   "devDependencies": {
     "chai": "^3.4.1",
     "mocha": "^2.3.4",
-    "socket.io-rpc-client": "^1.0.3",
+    "socket.io-rpc-client": "^1.0.5",
     "standard": "^5.4.1"
   },
 	"standard": {
