@@ -61,6 +61,14 @@ describe('server calling connected client', function () {
     })
   })
 
+  it('should allow clients to call exposed generator functions', function () {
+    return socket.rpc('callGenerator')('with arg a').then(function (ret) {
+      ret.should.equal('from server generator with arg a')
+    }, function (e) {
+      console.error(e)
+    })
+  })
+
   it('should properly call to client and return a synchronous function', function () {
     return socket.rpc('fnOnClient')().then(function (ret) {
       console.log('client returned: ' + ret)

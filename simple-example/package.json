@@ -5,6 +5,7 @@
     "postinstall": "jspm install"
   },
   "dependencies": {
+    "co": "^4.6.0",
     "morgan": "^1.3.0"
   },
   "jspm": {

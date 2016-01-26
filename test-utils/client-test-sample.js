@@ -20,5 +20,12 @@ rpc.expose({
   },
   callTextTestOnServer: function () {
     return rpc('textTest')()
+  },
+  callGenerator: function *(a) {
+    return yield new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve('from server generator ' + a)
+      }, 10)
+    })
   }
 })
