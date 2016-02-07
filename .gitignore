@@ -20,3 +20,4 @@ local.properties
 .loadpath
 .idea
 !.idea/runConfigurations/*
+npm-debug.log
