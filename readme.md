@@ -3,8 +3,8 @@
 [![NPM badge](https://nodei.co/npm/socket.io-rpc.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/socket.io-rpc/)
 [![Dependency Status](https://david-dm.org/capaj/socket.io-rpc.svg)](https://david-dm.org/capaj/socket.io-rpc) [![devDependency Status](https://david-dm.org/capaj/socket.io-rpc/dev-status.svg)](https://david-dm.org/capaj/socket.io-rpc#info=devDependencies)
 
-Has an isomorphic(browser or node) client library(which sits in separate [repo](https://github.com/capaj/socket.io-rpc-client)/[npm package](https://www.npmjs.com/package/socket.io-rpc-client)).
-Client side library has to be consumed with a package manager like [JSPM](https://github.com/jspm/jspm-cli)/webpack/browserify.
+Has an isomorphic(browser or node) client library, which sits in separate [repo](https://github.com/capaj/socket.io-rpc-client)/[npm package](https://www.npmjs.com/package/socket.io-rpc-client)).
+Client library has to be consumed with a package manager like [JSPM](https://github.com/jspm/jspm-cli)/webpack/browserify-no official support for a regular script tag.
 
 It is a minimalistic remote procedure call(RPC/RMI) library bootstrapped on socket.io.
 Main purpose is to make it more easier to structure your async code for browser-server realtime interaction. Typical example is when you need to call a function on the server from client and get the return value from that function back to the client. With raw socket.io, you need to register few events and emit them at the right moment. This can get complicated quite easily, especially for async operations and error handling. Thanks to promises(and try/catch for sync operations), this library knows when a computation on the other end failed/suceeded.
@@ -13,7 +13,7 @@ With socket.io-rpc, you just expose a tree of functions and then call those, soc
 
 ### Why promises over network rather than HTTP codes? 
 
-Because they are more real abstraction on long running tasks over the network. Trying to map all possible errors and their causes to available HTTP codes is not always straightforward.
+Because they are much more flexible abstraction for running tasks over the network. Trying to map all possible errors and their causes to available HTTP codes is not always straightforward and requires a lot of experience.
 
 #Simple example
 Folder with example can be run after installing all dependencies like this in the simple-example folder:
