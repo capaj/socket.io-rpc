@@ -15,7 +15,7 @@ With socket.io-rpc, you just expose a tree of functions and then call those, soc
 
 Because they are much more flexible abstraction for running tasks over the network. Trying to map all possible errors and their causes to available HTTP codes is not always straightforward and requires a lot of experience.
 
-#Simple example
+# Simple example
 Folder with example can be run after installing all dependencies like this in the simple-example folder:
 
     npm install //this runs jspm install too
@@ -24,12 +24,12 @@ Then run it from git repo root:
 
     node simple-example/server
 
-###With authentication (server)
+### With authentication (server)
 
 Set authentication normally as you would with [socket.io](http://socket.io/docs/migrating-from-0-9/#authentication-differences).
 
 
-###With authentication (browser)
+### With authentication (browser)
 
 Send your auth token with the backend connect method(the one that is exported from the module).
 
