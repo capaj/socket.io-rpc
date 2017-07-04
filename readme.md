@@ -1,4 +1,4 @@
-# socket.io-rpc [![Build Status](https://travis-ci.org/capaj/socket.io-rpc.svg?tag=1.0.3)](https://travis-ci.org/capaj/socket.io-rpc) [![Join the chat at https://gitter.im/capaj/socket.io-rpc](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/capaj/socket.io-rpc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# socket.io-rpc [![Build Status](https://travis-ci.org/capaj/socket.io-rpc.svg?tag=1.0.3)](https://travis-ci.org/capaj/socket.io-rpc)
 
 [![NPM badge](https://nodei.co/npm/socket.io-rpc.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/socket.io-rpc/)
 [![Dependency Status](https://david-dm.org/capaj/socket.io-rpc.svg)](https://david-dm.org/capaj/socket.io-rpc) [![devDependency Status](https://david-dm.org/capaj/socket.io-rpc/dev-status.svg)](https://david-dm.org/capaj/socket.io-rpc#info=devDependencies)
