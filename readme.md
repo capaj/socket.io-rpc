@@ -1,3 +1,7 @@
+## deprecated
+
+I don't plan to support this project any more. While it seemed cool when I made it, today I would advise you to use GraphQL to expose your JS functions over to the client. It's typesafe and has so much tooling already that no small library can compete. It can run purely over websockets too if you want that. There's really 0 usecases where this puny library would make more sense.
+
 # socket.io-rpc [![Build Status](https://travis-ci.org/capaj/socket.io-rpc.svg?tag=1.0.3)](https://travis-ci.org/capaj/socket.io-rpc)
 
 [![NPM badge](https://nodei.co/npm/socket.io-rpc.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/socket.io-rpc/)
