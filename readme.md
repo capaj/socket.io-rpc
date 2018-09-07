@@ -20,6 +20,7 @@ With socket.io-rpc, you just expose a tree of functions and then call those, soc
 Because they are much more flexible abstraction for running tasks over the network. Trying to map all possible errors and their causes to available HTTP codes is not always straightforward and requires a lot of experience.
 
 ### Simple example
+
 Folder with example can be run after installing all dependencies like this in the simple-example folder:
 
     npm install //this runs jspm install too
