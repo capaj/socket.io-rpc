@@ -1,4 +1,8 @@
-# socket.io-rpc [![Build Status](https://travis-ci.org/capaj/socket.io-rpc.svg?tag=1.0.3)](https://travis-ci.org/capaj/socket.io-rpc) [![Join the chat at https://gitter.im/capaj/socket.io-rpc](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/capaj/socket.io-rpc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+## deprecated
+
+I don't plan to support this project any more. While it seemed cool when I made it, today I would advise you to use GraphQL to expose your JS functions over to the client. It's typesafe and has so much tooling already that no small library can compete. It can run purely over websockets too if you want that. There's really 0 usecases where this puny library would make more sense.
+
+# socket.io-rpc [![Build Status](https://travis-ci.org/capaj/socket.io-rpc.svg?tag=1.0.3)](https://travis-ci.org/capaj/socket.io-rpc)
 
 [![NPM badge](https://nodei.co/npm/socket.io-rpc.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/socket.io-rpc/)
 [![Dependency Status](https://david-dm.org/capaj/socket.io-rpc.svg)](https://david-dm.org/capaj/socket.io-rpc) [![devDependency Status](https://david-dm.org/capaj/socket.io-rpc/dev-status.svg)](https://david-dm.org/capaj/socket.io-rpc#info=devDependencies)
@@ -15,7 +19,8 @@ With socket.io-rpc, you just expose a tree of functions and then call those, soc
 
 Because they are much more flexible abstraction for running tasks over the network. Trying to map all possible errors and their causes to available HTTP codes is not always straightforward and requires a lot of experience.
 
-# Simple example
+### Simple example
+
 Folder with example can be run after installing all dependencies like this in the simple-example folder:
 
     npm install //this runs jspm install too
